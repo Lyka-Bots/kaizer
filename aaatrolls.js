@@ -298,7 +298,6 @@ function buildMsg(raw, name, targetID) {
   }
   return { body, mentions };
 }
-
 module.exports = {
   config: {
     name: "troll",
@@ -306,9 +305,13 @@ module.exports = {
     author: "Siegfried Samá",
     countDown: 10,
     role: 2,
-    description: { en: "ginagamit sa mga tangang troller" },
+    description: {
+      en: "ginagamit sa mga tangang troller"
+    },
     category: "fun",
-    guide: { en: "{pn} @mention | {pn} tigil" }
+    guide: {
+      en: "{pn} @mention | {pn} tigil"
+    }
   },
 
   onStart: async function ({ api, event, usersData, message, args }) {
