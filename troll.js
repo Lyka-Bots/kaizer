@@ -218,8 +218,7 @@ const TROLL_LINES = [
   "Ibig Sabihin Talo Ka???",
   "Panalo Nako DogsKo???",
   "di mo'ko kayang sabayan tas asar kapa HAHAHHAHA",
-  "Naaawa Nako Sayo Bagal Mo Magreply Taba??",
-  ‎
+  "Naaawa Nako Sayo Bagal Mo Magreply Taba??",‎
 ‎  "Hoy [name] tanga😂😂🥊🥊",
 ‎  "Labas Ka AsoKo Tawag Ka Ng Amo Mo😂😂🥊🥊",
 ‎  "Ginalit Mo NaNaman Ako😂🥊😂🥊",
@@ -538,7 +537,7 @@ module.exports = {
       const session = trollSessions.get(threadID);
       session.aborted = true;
       trollSessions.delete(threadID);
-      return message.reply("✅ Troll session naitigil na.");
+      return message.reply("sige boss.");
     }
 
     if (trollSessions.has(threadID)) {
@@ -547,7 +546,7 @@ module.exports = {
 
     const mentionIDs = Object.keys(mentions || {});
     if (!mentionIDs.length) {
-      return message.reply("tag mo yung i t-troll mo boss kaizer");
+      return message.reply("tag mo yung i t-troll mo boss kaizer.");
     }
 
     const targetID = mentionIDs[0];
