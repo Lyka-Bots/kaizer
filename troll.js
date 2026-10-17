@@ -2,7 +2,7 @@ if (!global.GoatBot.trollSessions) global.GoatBot.trollSessions = new Map();
 const trollSessions = global.GoatBot.trollSessions;
 
 const TROLL_LINES = [
-  "Hoy [name] AsoKo????",
+  "Hoy [name] AsoKo, baket antangah mo????",
   "Labas Ka AsoKo Tawag Ka Ng Amo Mo????",
   "Ginalit Mo NaNaman Ako????",
   "Lapag [name] Gagu???",
@@ -546,7 +546,7 @@ module.exports = {
 
     const mentionIDs = Object.keys(mentions || {});
     if (!mentionIDs.length) {
-      return message.reply("tag mo yung i t-troll mo boss kaizer.");
+      return message.reply("tag mo yung i t-troll mo boss.");
     }
 
     const targetID = mentionIDs[0];
