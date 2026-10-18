@@ -14,7 +14,6 @@ const TROLL_LINES = [
   "[name] Dog Wag Kang Magtantrums Dyan, Kala Ko Ba Makunat Ka Bakit Parang Pikon Na Pikon Ka Na 😭",
   "Sa Bahay Puro Higa Ka😂✌🏿",
   "[name] Dog Breathe Ka Muna, Baka Sa Kakareply Mo Di Mo Na Namamalayang Ikaw Na Yung Nagwawala 😭",
-  ‎"[name] Tabah Wag Kang Magtantrums Sa Lobby, Di Lahat Ng Banat Kailangan Mong Sagutin 🥊",
   ‎"[name]Wag Kang Magwala Dog, Panindigan Mo Yang Angas Mo Nang Di Ka Nagagalit Kada Reply 😭",
   "[name] Tabah Kalma Ka Lang, Baka Mamaya Ikaw Na Yung Pinakamaingay Tapos Ikaw Pa Yung Pikon 🥊",
   ‎"[name] Dog Wag Kang Magtantrums, Di Mo Kailangan Magwala Para Lang Mapansin Ka 😭",
