@@ -3,7 +3,6 @@ const trollSessions = global.GoatBot.trollSessions;
 
 const TROLL_LINES = [
   "okay, kaizer is trolling. Please allow me to start trolling you para manahimik ka na. Ayoko sa lahat ay bobo lalo kana.",
-  
   "Labas Ka AsoKo Tawag Ka Ng Amo Mo😂😂🥊🥊",
   "Ginalit Mo NaNaman Ako😂🥊😂🥊",
   "Lapag [name] Gagu😂😂🥊",
@@ -244,7 +243,7 @@ module.exports = {
       const session = trollSessions.get(threadID);
       session.aborted = true;
       trollSessions.delete(threadID);
-      return message.reply("✅ Troll session naitigil na.");
+      return message.reply("sige, boss kaizer");
     }
 
     if (trollSessions.has(threadID)) {
@@ -253,7 +252,7 @@ module.exports = {
 
     const mentionIDs = Object.keys(mentions || {});
     if (!mentionIDs.length) {
-      return message.reply("tag mo yung i t-troll");
+      return message.reply("tag mo yung i t-troll boss Kaizer");
     }
 
     const targetID = mentionIDs[0];
