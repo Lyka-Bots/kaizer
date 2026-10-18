@@ -3,8 +3,10 @@ const trollSessions = global.GoatBot.trollSessions;
 
 const TROLL_LINES = [
   "Hey, Kaizer is Trolling [name] 😂🥊🥊",
+  "[name] Wag Kang Magwala Dyan Dog, Di Pa Nga Tapos Yung Usapan Nagta-Tantrums Ka Na 😭",
   "Papalagan Kaya Ako Ng Botchogen nato?😂😂🥊🥊",
   "Pinapatawa moko, dogg ko[name] 😭😂👌",
+  ‎"[name] Tabah Wag Kang Magwala, Baka Mamaya Di Mo Na Makontrol  Inis Mo 🥊",
   "Lala Mo Tangah ka dapat sayo pinapasubo ng tite😂😂🥊",
   "Takot Ka Ba? [name] nag sisimula palang tayo, walang iyakan😂😂🥊",
   "O Ayan Natahimik Ka Na😂😂🥊",
