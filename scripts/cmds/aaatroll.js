@@ -4,7 +4,6 @@ const trollSessions = global.GoatBot.trollSessions;
 const TROLL_LINES = [
   "okay, kaizer is trolling. Please allow me to start trolling you para manahimik ka na. Ayoko sa lahat ay bobo lalo kana.",
   "Labas Ka AsoKo Tawag Ka Ng Amo Mo😂😂🥊🥊",
-  ‎" [name] Wag Kang Magwala Dyan Dog, Di Pa Nga Tapos Yung Usapan NagtaTantrums Ka Na 😭",
   "Ginalit Mo NaNaman Ako😂🥊😂🥊",
   "Lapag [name] Gagu😂😂🥊",
   "Takot Ka Ba? [name]😂😂🥊",
