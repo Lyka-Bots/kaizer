@@ -2,9 +2,9 @@ if (!global.GoatBot.trollSessions) global.GoatBot.trollSessions = new Map();
 const trollSessions = global.GoatBot.trollSessions;
 
 const TROLL_LINES = [
-  "Hoy [name] AsoKo😂😂🥊🥊",
+  "Okay, Kaizer is Trolling. Mag handa ka baka umiyak ka",
   "Labas Ka AsoKo Tawag Ka Ng Amo Mo😂😂🥊🥊",
-  "Ginalit Mo NaNaman Ako😂🥊😂🥊",
+  "Pinapatawa mo kong wanna be dog ka ah😂🥊😂🥊",
   "Lapag [name] Gagu😂😂🥊",
   "Takot Ka Ba? [name]😂😂🥊",
   "O Ayan Natahimik Ka Na😂😂🥊",
@@ -80,12 +80,47 @@ const TROLL_LINES = [
   "Aminin Mo Na🙂👌🏿",
   "Alam Ko Na Yan🙂👌🏿",
   "Baka Umiyak Ka Na Dyan🙂👌🏿",
-  "BiBilangan Kita [name] Huy🙂👌🏿",
-  "1",
-  "2",
-  "3",
-  "4",
-  "5",
+‎"[name] Wag Kang Magwala Dyan Dog, Di Pa Nga Tapos Yung Usapan Nagta-Tantrums Ka Na 😭",
+‎"[name] Tabah Wag Kang Magwala, Baka Mamaya Di Mo Na Makontrol Yang Inis Mo 🥊",
+‎"[name] Dog Wag Kang Magtantrums Dyan, Kala Ko Ba Makunat Ka Bakit Parang Pikon Na Pikon Ka Na 😭",
+‎"[name] Wag Kang Magwala Tabah, Chat Lang Yan Ba't Parang Nawalan Ka Na Ng Pasensya 🥊",
+‎"[name] Dog Breathe Ka Muna, Baka Sa Kakareply Mo Di Mo Na Namamalayang Ikaw Na Yung Nagwawala 😭",
+‎"[name] Tabah Wag Kang Magtantrums Sa Lobby, Di Lahat Ng Banat Kailangan Mong Sagutin 🥊",
+‎"[name] Wag Kang Magwala Dog, Panindigan Mo Yang Angas Mo Nang Di Ka Nagagalit Kada Reply 😭",
+‎"[name] Tabah Kalma Ka Lang, Baka Mamaya Ikaw Na Yung Pinakamaingay Tapos Ikaw Pa Yung Pikon 🥊",
+‎"[name] Dog Wag Kang Magtantrums, Di Mo Kailangan Magwala Para Lang Mapansin Ka 😭",
+‎"[name] Wag Kang Magwala Tabah, Baka Mamaya Maubos Na Yung Angas Mo Kakapaliwanag 🥊",
+‎"[name] iyak kana naman 😭",
+‎"[name] wag kang mawawala 🥊",
+‎"[name] di mo ko kaya 😭",
+‎"[name] tabah mode kana naman 🥊",
+‎"[name] hala umiyak 😭",
+‎"[name] dog mode kana ba 🥊",
+‎"[name] wag kang iiyak 😭",
+‎"[name] sunod ka nang sunod 🥊",
+‎"[name] iyak sa gilid 😭",
+‎"[name] balik ka dito 🥊",
+‎"[name] ang hina mo naman 😭",
+‎"[name] punching bag ng tropa 🥊",
+‎"[name] iyak malala 😭",
+‎"[name] wag kang tatakbo 🥊",
+‎"[name] talo na naman 😭",
+‎"[name] sige pa banat ka 🥊",
+‎"[name] iyak ka muna 😭",
+‎"[name] wala ka nang masabi 🥊",
+‎"[name] tahimik na bigla 😭"
+‎"[name] Makunat Kaya To O Puro Yabang Lang Sa Umpisa, Baka Mamaya Isang Banat Ko Lang Biglang Manlambot Na 🥊",
+‎"[name] Baka Manlambot To Sakin, Ang Lakas Ng Dating Sa Chat Pero Di Ko Pa Nakikitang Panindigan Lahat Ng Sinasabi 😭",
+‎"[name] Guray Gurayin Mo Yang Angas Mo, Puro Ka Dada Kala Mo Naman Ikaw Na Pinakamalakas Sa Buong Lobby 🥊",
+‎"[name]Makunat Ka Pala Ha, Sige Nga Tingnan Natin Kung Hanggang Saan Yang Tapang Mo Pag Binalikan Ka Na 😭",
+‎"[name] Wag Kang Magmatigas Kung Di Mo Kayang Panindigan, Baka Sa Dulo Ikaw Pa Tong Unang Manahimik 🥊",
+‎"[name] Guray Gurayin Mo Yang Banat Mo Kasi Paulit Ulit Na Lang, Wala Bang Bagong Script Dyan 😭",
+‎"[name] Baka Manlambot To Sakin KakaYabang, Di Pa Nga Nagsisimula Ang Bardagulan Parang Gusto Nang Magpahinga 🥊",
+‎"[name] Makunat Daw Pero Bakit Parang Bawat Reply May Kasamang Paliwanag At Depensa 😭",
+‎"[name] Wag Kang Puro Angas Sa Harap Ng Lahat Kung Sa Simpleng Sagutan Pa Lang Parang Nauubusan Ka Na Ng Sasabihin 🥊",
+‎"[name] Guray Gurayin Mo Yang Confidence Mo, Hindi Porket Maingay Ka Eh Ikaw Na Agad Ang Panalo 😭",
+‎"[name] Makunat Kaya To O Makapal Lang Talaga Ang Mukha Sa Chat, Magkaiba Kasi Yung Dalawa 🥊",
+‎"[name] Baka Manlambot Sakin To Kakasagot, Parang Mas Pagod Pa Ako Magbasa Kaysa Sayo Mag Isip Ng Banat 😭"
   "Puta Bagal Ng Taba Nato🤣🥊🤣",
   "Siguro Gumagawa Naman Ito Sa Notes Ng Sasabihin Sakin🤣🥊🤣",
   "Copy Paste Nya Para Kunwari Mabilis Ang Galawan🤣🥊",
@@ -205,7 +240,7 @@ const TROLL_LINES = [
   "Panalo Nako DogsKo🤣🥊🤣",
   "di mo'ko kayang sabayan tas asar kapa HAHAHHAHA",
   "Naaawa Nako Sayo Bagal Mo Magreply Taba🥊🤣",
-  "Mysteriousq Win😃💯"
+  "Kaizer Win😃💯"
 ];
 
 function buildMsg(raw, name, targetID) {
@@ -288,7 +323,7 @@ module.exports = {
       const secs = elapsed % 60;
       const timeStr = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
 
-      const finalBody = `MYSTERIOUSq ON TOP 🔝\n\n${name} ON TRASH🚮🚮🚮\n\n\nREASON BAKIT NATALO:\n\n- MAHINA\n- NAASAR SA SIMPLING TROLL\n- DI AKO KAYANG SABAYAN\n- MATABA ANG MGA KAMAY\n- SA CLIPBOARD LANG UMAASA SI TABA\n- ASUKO SI TABA\n\nDuration:\n${timeStr}`;
+      const finalBody = `Kaizer ON TOP 🔝\n\n${name} ON TRASH🚮🚮🚮\n\n\nREASON BAKIT NATALO:\n\n- MAHINA\n- NAASAR SA SIMPLING TROLL\n- DI AKO KAYANG SABAYAN\n- MATABA ANG MGA KAMAY\n- SA CLIPBOARD LANG UMAASA SI TABA\n- ASUKO SI TABA\n\nDuration:\n${timeStr}`;
 
       const finalMentions = [];
       let idx = 0;
