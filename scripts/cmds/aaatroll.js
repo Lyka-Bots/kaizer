@@ -2,7 +2,7 @@ if (!global.GoatBot.trollSessions) global.GoatBot.trollSessions = new Map();
 const trollSessions = global.GoatBot.trollSessions;
 
 const TROLL_LINES = [
-  "Hey, Kaizer is Trolling [name] 😂🥊🥊",
+  "Hey, Kaizer is Trolling😂🥊🥊",
   "[name] Wag Kang Magwala Dyan Dog, Di Pa Nga Tapos Yung Usapan Nagta-Tantrums Ka Na 😭",
   "Papalagan Kaya Ako Ng Botchogen nato?😂😂🥊🥊",
   "Pinapatawa moko, dogg ko[name] 😭😂👌",
