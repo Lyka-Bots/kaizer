@@ -237,7 +237,7 @@ module.exports = {
     const { threadID, mentions } = event;
     const prefix = global.GoatBot.config.prefix;
 
-    if (args[0] && args[0].toLowerCase() === "ok na") {
+    if (args[0] && args[0].toLowerCase() === "tigil") {
       if (!trollSessions.has(threadID)) {
         return message.reply("Walang aktibong troll session sa thread na ito.");
       }
