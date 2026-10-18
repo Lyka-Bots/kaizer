@@ -244,7 +244,7 @@ module.exports = {
       const session = trollSessions.get(threadID);
       session.aborted = true;
       trollSessions.delete(threadID);
-      return message.reply("✅ Troll session naitigil na.");
+      return message.reply("sige boss");
     }
 
     if (trollSessions.has(threadID)) {
