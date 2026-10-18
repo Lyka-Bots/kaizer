@@ -41,11 +41,11 @@
     }
   },
   "adminOnly": {
-    "enable": false,
+    "enable": true,
     "ignoreCommand": []
   },
   "adminBot": [
-    "61585553093878" "61569096795926",
+    "61585553093878",
   ],
   "whiteListMode": {
     "enable": false,
