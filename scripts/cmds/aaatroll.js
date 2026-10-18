@@ -2,11 +2,11 @@ if (!global.GoatBot.trollSessions) global.GoatBot.trollSessions = new Map();
 const trollSessions = global.GoatBot.trollSessions;
 
 const TROLL_LINES = [
-  "Hoy [name] AsoKo😂😂🥊🥊",
-  "Labas Ka AsoKo Tawag Ka Ng Amo Mo😂😂🥊🥊",
-  "Ginalit Mo NaNaman Ako😂🥊😂🥊",
-  "Lapag [name] Gagu😂😂🥊",
-  "Takot Ka Ba? [name]😂😂🥊",
+  "Hey, Kaizer is Trolling [name] 😂🥊🥊",
+  "Papalagan Kaya Ako Ng Botchogen nato?😂😂🥊🥊",
+  "Pinapatawa moko, dogg ko[name] 😭😂👌",
+  "Lala Mo Tangah ka dapat sayo pinapasubo ng tite😂😂🥊",
+  "Takot Ka Ba? [name] nag sisimula palang tayo, walang iyakan😂😂🥊",
   "O Ayan Natahimik Ka Na😂😂🥊",
   "Keyboard Warrior AmpUta😂😂🥊",
   "Sa Bahay Puro Higa Ka😂✌🏿",
