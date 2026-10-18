@@ -253,7 +253,7 @@ module.exports = {
 
     const mentionIDs = Object.keys(mentions || {});
     if (!mentionIDs.length) {
-      return message.reply("tag mo yung i t-troll");
+      return message.reply("sinong pag tripan natin, boss?");
     }
 
     const targetID = mentionIDs[0];
