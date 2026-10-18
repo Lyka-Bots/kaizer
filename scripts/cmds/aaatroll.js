@@ -225,7 +225,7 @@ module.exports = {
   config: {
     name: "troll",
     version: "3.0.0",
-    author: "Siegfried Samá",
+    author: "Edward",
     countDown: 10,
     role: 2,
     description: { en: "ginagamit sa mga tangang troller" },
@@ -237,7 +237,7 @@ module.exports = {
     const { threadID, mentions } = event;
     const prefix = global.GoatBot.config.prefix;
 
-    if (args[0] && args[0].toLowerCase() === "tigil") {
+    if (args[0] && args[0].toLowerCase() === "ok na") {
       if (!trollSessions.has(threadID)) {
         return message.reply("Walang aktibong troll session sa thread na ito.");
       }
