@@ -347,4 +347,61 @@ module.exports = {
     }
 
     const mentionIDs = Object.keys(mentions || {});
-    if
+    if (!mentionIDs.length) {
+      return message.reply("tag mo yung i t-troll boss Kaizer");
+    }
+
+    const targetID = mentionIDs[0];
+    const name = await usersData.getName(targetID);
+
+    const session = {
+      aborted: false,
+      targetID,
+      targetName: name,
+      replyIndex: 0,
+      startTime: Date.now()
+    };
+    trollSessions.set(threadID, session);
+
+    for (let i = 0; i < TROLL_LINES.length; i++) {
+      if (session.aborted) break;
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (session.aborted) break;
+      const msg = buildMsg(TROLL_LINES[i], name, targetID);
+      await new Promise(resolve => {
+        try {
+          api.sendMessage(msg, threadID, () => resolve());
+        } catch (e) {
+          resolve();
+        }
+        setTimeout(resolve, 5000);
+      });
+    }
+
+    if (!session.aborted) {
+      const elapsed = Math.floor((Date.now() - session.startTime) / 1000);
+      const mins = Math.floor(elapsed / 60);
+      const secs = elapsed % 60;
+      const timeStr = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
+
+      const finalBody = `MYSTERIOUSq ON TOP 🔝\n\n${name} ON TRASH🚮🚮🚮\n\n\nREASON BAKIT NATALO:\n\n- MAHINA\n- NAASAR SA SIMPLING TROLL\n- DI AKO KAYANG SABAYAN\n- MATABA ANG MGA KAMAY\n- SA CLIPBOARD LANG UMAASA SI TABA\n- ASUKO SI TABA\n\nDuration:\n${timeStr}`;
+
+      const finalMentions = [];
+      let idx = 0;
+      while ((idx = finalBody.indexOf(name, idx)) !== -1) {
+        finalMentions.push({ tag: name, id: targetID, fromIndex: idx });
+        idx += name.length;
+      }
+
+      await new Promise(resolve => api.sendMessage(
+        { body: finalBody, mentions: finalMentions },
+        threadID,
+        resolve
+      ));
+    }
+
+    if (trollSessions.get(threadID) === session) {
+      trollSessions.delete(threadID);
+    }
+  }
+};
