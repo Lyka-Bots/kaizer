@@ -2,13 +2,12 @@
 ‎const trollSessions = global.GoatBot.trollSessions;
 ‎
 ‎const TROLL_LINES = [
-‎"okay, kaizer stepp in. wanna troll you mahinang nilalang [name]",
-  "Labas Ka AsoKo Tawag Ka Ng Amo Mo😂😂🥊🥊",
-‎"Wag Kang Magwala Dyan Dog [name], Di Pa Nga Tapos Yung Usapan Nagta-Tantrums Ka Na 😭",
+‎  "okay, kaizer stepp in. wanna troll you mahinang nilalang [name]",
+‎  "Labas Ka AsoKo Tawag Ka Ng Amo Mo😂😂🥊🥊",
+  "Wag Kang Magwala Dyan Dog [name], Di Pa Nga Tapos Yung Usapan Nagta-Tantrums Ka Na 😭",
   "Tabah Wag Kang Magwala [name], Baka Mamaya Di Mo Na Makontrol Inis Mo 🥊",
   ‎"Dog Wag Kang Magtantrums Dyan [name], Kala Ko Ba Makunat Ka Bakit Parang Pikon Na Pikon Ka Na 😭",
   ‎"Wag Kang Magwala Tabah [name], Chat Lang Yan Ba't Parang Nawalan Ka Na Ng Pasensya 🥊",
-‎  
 ‎];
 ‎
 ‎function buildMsg(raw, name, targetID) {
