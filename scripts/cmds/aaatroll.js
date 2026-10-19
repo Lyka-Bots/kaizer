@@ -320,7 +320,7 @@ module.exports = {
   config: {
     name: "troll",
     version: "3.0.0",
-    author: "Siegfried Samá",
+    author: "Kaizer",
     countDown: 10,
     role: 2,
     description: { en: "ginagamit sa mga tangang troller" },
