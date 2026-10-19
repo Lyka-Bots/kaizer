@@ -1,0 +1,65 @@
+
+let trollerMode = {};
+
+module.exports = {
+  config: {
+    name: "tanga",
+    version: "1.1.0",
+    author: "Custom",
+    role: 0,
+    description: {
+      en: "Reply-based troller mode with start and stop"
+    },
+    category: "events"
+  },
+
+  onChat: async function ({ api, event }) {
+    const body = event.body?.trim().toLowerCase();
+    if (!body) return;
+
+    const threadID = String(event.threadID);
+
+    if (body === "done") {
+      trollerMode[threadID] = false;
+      return api.sendMessage(
+        "Troller mode stopped.",
+        event.threadID
+      );
+    }
+
+    if (body === "gow") {
+      trollerMode[threadID] = true;
+      return api.sendMessage(
+        "TROLLER MODE ACTIVATED 😈",
+        event.threadID
+      );
+    }
+
+    if (body !== "tanga") return;
+    if (trollerMode[threadID] === false) return;
+
+    const targetID = event.messageReply?.senderID;
+    if (!targetID) return;
+
+    if (String(targetID) === String(event.senderID)) return;
+
+    const name = "Sige Boss Kaizer";
+
+    const lines = [
+      `${name}, Wag Kang Magwala Dyan Dog, Di Pa Tapos Ang Usapan 😭🫵`,
+      `${name}, Tabah Chill Ka Lang, Baka Mag-Tantrums Ka Na Naman 😭`,
+      `${name}, Troller Mode Na Tayo Dog, Huwag Kang Bibigay 😂🫵`,
+      `${name}, Makunat Ka Pala, Akala Ko Kanina Pa Susuko 😭`,
+      `${name}, Wag Kang Mawawala Tabah, Mainit Pa Ang Asaran 😂`,
+      `${name}, Dog Mode Ka Na Ba, Ba't Parang Tinamaan Ka Agad 😭🫵`,
+      `${name}, Hinga Muna Tabah, Baka Maubusan Ka Ng Banat 😂`,
+      `${name}, Huwag Kang Mag-Inarte Dog, Biruan Lang Naman To 😭`
+    ];
+
+    const reply = lines[
+      Math.floor(Math.random() * lines.length)
+    ];
+
+    return api.sendMessage(reply, event.threadID);
+  }
+};
