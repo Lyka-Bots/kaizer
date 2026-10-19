@@ -1,5 +1,4 @@
-‎
-‎if (!global.GoatBot.trollSessions) {
+‎‎if (!global.GoatBot.trollSessions) {
 ‎  global.GoatBot.trollSessions = new Map();
 ‎
 ‎ const TROLL_LINES = ]
