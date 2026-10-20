@@ -370,33 +370,7 @@ module.exports = {
       const msg = buildMsg(TROLL_LINES[i], name, targetID);
       await new Promise(resolve => {
         try {
-          await new Promise(resolve => {
-  try {
-    api.sendMessage(msg, threadID, (err, info) => {
-      if (err) {
-        console.error("[SEND ERROR]", err);
-        return resolve();
-      }
-
-      if (!info || !info.messageID) {
-        return resolve();
-      }
-
-      api.setMessageReaction("😂", info.messageID, (reactErr) => {
-        if (reactErr) {
-          console.error("[AUTO REACT ERROR]", reactErr);
-        }
-        resolve();
-      });
-    });
-  } catch (e) {
-    console.error("[AUTO REACT ERROR]", e);
-    resolve();
-  }
-
-  setTimeout(resolve, 5000);
-});
-api.sendMessage(msg, threadID, () => resolve());
+          api.sendMessage(msg, threadID, () => resolve());
         } catch (e) {
           resolve();
         }
@@ -431,4 +405,4 @@ api.sendMessage(msg, threadID, () => resolve());
     }
   }
 };
-    
+        
