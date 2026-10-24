@@ -1,12 +1,12 @@
 module.exports = {
   config: {
-    name: "autoreact",
-    version: "1.1.1",
-    author: "Siegfried Samá - modified by kaizer",
+    name: "autoreactv2",
+    version: "1.0.2",
+    author: "Siegfried Samá",
     countDown: 0,
     role: 0,
     description: {
-      en: "Bot auto-reacts to messages based on keywords"
+      en: "Auto-react to messages based on keywords (v2 - startsWith detection)"
     },
     category: "events",
   },
@@ -14,50 +14,62 @@ module.exports = {
   onStart: async function () {},
 
   onChat: async function ({ api, event }) {
-    const { threadID, messageID } = event;
+    const { messageID } = event;
     if (!event.body) return;
-    const react = event.body.toLowerCase();
 
-    // 😆 Funny / Bastos keywords
+    const body = event.body;
+    const starts = (kw) => body.toLowerCase().startsWith(kw.toLowerCase());
+
+    const setReact = (emoji) => {
+      api.setMessageReaction(emoji, messageID, (err) => {
+        if (err) console.error(`[autoreactv2] Failed to set reaction: ${err}`);
+      }, true);
+    };
+
+    // ❤️ Greetings / Wholesome
     if (
-      ["hahaha","haha","pakyu","bobo","gago","tangina","tang","pak","shit","amp","lol","ulol",
-      "walang utak","tanga","bts","burat","kantutin","unggoy","bano","kulang","mabaho",
-      "mapanghi","suntukan","stupid","fuck","fuckyou","sapak","bold","bisaya","gagi",
-      "bastos","deputa","puta","pota","baboy","kababuyan","hayup","hayop","nigga",
-      "script kiddie","trash","kagagohan","kagaguhan","kingina","hindot","jesus","jesos",
-      "abno","lmao","xd","biot","bayot","bayut","bakla","bading","poor"].some(k => react.includes(k))
-      || ["😆"].some(e => event.body.includes(e))
+      ["kain","yie","hehe","mwah","mwuah","baby","bby","babe","bebe",
+      "good","afternoon","aftie","morning","eve","dali na","we",
+      "lalaki","buti pa"].some(k => starts(k))
+      || ["😋","🤩","🙄","🤓","☕","🤗","🤭","😶","🥵","😎","🤡","😇","😊","😏","😻","❤️"].some(emoji => body.startsWith(emoji))
     ) {
-      return api.setMessageReaction("😆", messageID, () => {}, true);
+      return setReact("❤️");
     }
 
-    // 😍 Love / Kilig keywords
+    // 😍 Love / Kilig
     if (
-      ["mahal","love","lab","ilove","ilab","labyu","kiss","yie","kwass","krass","crush",
-      "ligawan","kilig","kinikilig","ugh","sige pa","sarap","sex","porn","kantotan",
-      "iyotan","iyutan","pasend","iyot","iyut","eut","shet","send","baby","babe","babi",
-      "bby","kantot","manyak","libog","horn","malibog","labs","pekpek","pepe","puke",
-      "bilat","puday","finger","fifinger","pipinger","pinger","mwah","mwuah","halikan",
-      "halik","marry","abno"].some(k => react.includes(k))
-      || ["😊","😗","😙","😘","😚","😍","🤭","🥰","😇","🤡","☺"].some(e => event.body.includes(e))
+      ["love","i love","ilove","ilab","lalabs","mahal",
+      "shet","kantot","kantutan","kantotan","iyutan","iyotan","bold","porn",
+      "pekpek","pepe","fuck","ugh","iniyot","eut","eutan","jakol","jakul",
+      "salsal","fingerin"].some(k => starts(k))
+      || ["😙","😘","😗","😍","🥰","😻"].some(emoji => body.startsWith(emoji))
     ) {
-      return api.setMessageReaction("😍", messageID, () => {}, true);
+      return setReact("😍");
     }
 
-    // 😢 Sad keywords
+    // 😢 Sad / Stress
     if (
-      ["sakit","saket","peyn","pain","mamatay","ayaw ko na","saktan","sasaktan","sad",
-      "malungkot","depress","stress","depression","kalungkutan"].some(k => react.includes(k))
-      || ["😥","😰","😨","😢",":(","😔","😞","😭"].some(e => event.body.includes(e))
+      ["sad","malungkot","umay","ayaw ko na","gusto ko ng mamatay","stress",
+      "gusto ko nang mamatay","mamatay na lang ako","bwesit talaga","hay",
+      "bwesit na yan","putanginang yan","hayop na yan","piste na yan",
+      "tarantado na yan","piste talaga","arghh","pota!","puta!","gago!",
+      "mamatay na lahat ng mga","sana namatay","nakakalungkot",
+      "sakit","ifeel","i feel","hindi na ako","nakakainggit","nandi","nangdi"].some(k => starts(k))
+      || ["😞","😨","😥","😭","😓","😢","😕","😑","😩","😰","😟","😦"].some(emoji => body.startsWith(emoji))
     ) {
-      return api.setMessageReaction("😢", messageID, () => {}, true);
+      return setReact("😢");
     }
 
-    // ❤ Greetings keywords
+    // 😆 Funny / Bastos
     if (
-      ["eve","morning","afternoon","evening","eat","night","nyt"].some(k => react.includes(k))
+      ["bobo","gago","suntukan","kantutin","hayop","hayup","hindot","tangina",
+      "tang ina","bwesit","piste","argh","pota","puta","fuckyou","pakyu","pakyo",
+      "may bold","bold ni","may bold si","send bold","kingina","king ina",
+      "hahaha","baliw","bubu","mabaho","manyakis","manyakol","ambobo",
+      "walang utak","bts","deputa","amp","tanga","bastos","punyeta"].some(k => starts(k))
+      || ["😆"].some(emoji => body.startsWith(emoji))
     ) {
-      return api.setMessageReaction("❤", messageID, () => {}, true);
+      return setReact("😆");
     }
   }
 };
