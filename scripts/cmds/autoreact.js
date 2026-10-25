@@ -57,7 +57,7 @@ module.exports = {
     if (
       ["eve","morning","afternoon","evening","eat","night","nyt"].some(k => react.includes(k))
     ) {
-      return api.setMessageReaction("❤", messageID, () => {}, true);
+      return api.setMessageReaction("💚", messageID, () => {}, true);
     }
   }
 };
