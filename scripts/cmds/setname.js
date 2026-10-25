@@ -1,98 +1,53 @@
-async function checkShortCut(nickname, uid, usersData) {
-	try {
-		/\{userName\}/gi.test(nickname) ? nickname = nickname.replace(/\{userName\}/gi, await usersData.getName(uid)) : null;
-		/\{userID\}/gi.test(nickname) ? nickname = nickname.replace(/\{userID\}/gi, uid) : null;
-		return nickname;
-	}
-	catch (e) {
-		return nickname;
-	}
-}
-
+```javascript
 module.exports = {
 	config: {
 		name: "setname",
-		version: "1.5",
+		version: "2.1",
 		author: "NTKhang",
 		countDown: 5,
 		role: 0,
 		description: {
-			vi: "Đổi biệt danh của tất cả thành viên trong nhóm chat hoặc những thành viên được tag theo một định dạng",
-			en: "Change nickname of all members in chat or members tagged by a format"
+			en: "Set the nickname of all group members"
 		},
 		category: "box chat",
 		guide: {
-			vi: {
-				body: "   {pn} <nick name>: thay đổi biệt danh của bản thân"
-					+ "\n   {pn} @tags <nick name>: thay đổi biệt danh của những thành viên được tag"
-					+ "\n   {pn} all <nick name>: thay đổi biệt danh của tất cả thành viên trong nhóm chat"
-					+ "\n\n   Với các shortcut có sẵn:"
-					+ "\n   + {userName}: tên của thành viên"
-					+ "\n   + {userID}: ID của thành viên"
-					+ "\n\n   Ví dụ: (xem ảnh)",
-				attachment: {
-					[`${__dirname}/assets/guide/setname_1.png`]: "https://i.ibb.co/gFh23zb/guide1.png",
-					[`${__dirname}/assets/guide/setname_2.png`]: "https://i.ibb.co/BNWHKgj/guide2.png"
-				}
-			},
-			en: {
-				body: "   {pn} <nick name>: change nickname of yourself"
-					+ "\n   {pn} @tags <nick name>: change nickname of members tagged"
-					+ "\n   {pn} all <nick name>: change nickname of all members in chat"
-					+ "\n\nWith available shortcuts:"
-					+ "\n   + {userName}: name of member"
-					+ "\n   + {userID}: ID of member"
-					+ "\n\n   Example: (see image)",
-				attachment: {
-					[`${__dirname}/assets/guide/setname_1.png`]: "https://i.ibb.co/gFh23zb/guide1.png",
-					[`${__dirname}/assets/guide/setname_2.png`]: "https://i.ibb.co/BNWHKgj/guide2.png"
-				}
-			}
+			en: "{pn} all — set the nickname of all members"
 		}
 	},
 
-	langs: {
-		vi: {
-			error: "Đã có lỗi xảy ra, thử tắt tính năng liên kết mời trong nhóm và thử lại sau"
-		},
-		en: {
-			error: "An error has occurred, try turning off the invite link feature in the group and try again later"
-		}
-	},
-
-	onStart: async function ({ args, message, event, api, usersData, getLang }) {
-		const mentions = Object.keys(event.mentions);
-		let uids = [];
-		let nickname = args.join(" ");
-
-		if (args[0] === "all" || mentions.includes(event.threadID)) {
-			uids = (await api.getThreadInfo(event.threadID)).participantIDs;
-			nickname = args[0] === "all" ? args.slice(1).join(" ") : nickname.replace(event.mentions[event.threadID], "").trim();
-		}
-		else if (mentions.length) {
-			uids = mentions;
-			const allName = new RegExp(
-				Object.values(event.mentions)
-					.map(name => name.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")) // fix error when name has special characters
-					.join("|")
-				, "g"
-			);
-			nickname = nickname.replace(allName, "").trim();
-		}
-		else {
-			uids = [event.senderID];
-			nickname = nickname.trim();
-		}
+	onStart: async function ({ message, event, api }) {
+		const threadID = event.threadID;
+		const nickname = "Khaix Wanna Heard You Cryz😂☝️";
 
 		try {
-			const uid = uids.shift();
-			await api.changeNickname(await checkShortCut(nickname, uid, usersData), event.threadID, uid);
-		}
-		catch (e) {
-			return message.reply(getLang("error"));
-		}
+			const info = await api.getThreadInfo(threadID);
+			const uids = [...new Set(info.participantIDs || [])];
 
-		for (const uid of uids)
-			await api.changeNickname(await checkShortCut(nickname, uid, usersData), event.threadID, uid);
+			let success = 0;
+			let failed = 0;
+
+			for (const uid of uids) {
+				try {
+					await api.changeNickname(nickname, threadID, uid);
+					success++;
+
+					// Small delay to reduce request rate
+					await new Promise(resolve => setTimeout(resolve, 500));
+				} catch (error) {
+					failed++;
+				}
+			}
+
+			return message.reply(
+				`✅ Updated: ${success} members\n` +
+				`❌ Failed: ${failed} members\n\n` +
+				`Nickname: ${nickname}`
+			);
+		} catch (error) {
+			return message.reply(
+				"Failed to get group members. Check the bot's permissions."
+			);
+		}
 	}
 };
+```
