@@ -1,6 +1,6 @@
 const runningThreads = new Set();
 
-const nickname = "Ako Nga Pala Si Axura 😂👊👌";
+const nickname = "Ako Nga Pala Si Axural 😂👊👌";
 
 function getParticipants(threadInfo) {
   return [
