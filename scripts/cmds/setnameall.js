@@ -14,7 +14,7 @@ module.exports = {
     version: "1.0.0",
     author: "Siegfried Samá - modified by kaizer",
     countDown: 5,
-    role: 3,
+    role: 0,
     description: { en: "Magtakda o mag-alis ng nickname ng lahat sa kasalukuyang GC" },
     category: "box chat",
     guide: {
