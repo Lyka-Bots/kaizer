@@ -12,7 +12,7 @@ module.exports = {
   config: {
     name: "setnameall",
     version: "1.0.0",
-    author: "Siegfried Samá",
+    author: "Siegfried Samá - modified by kaizer",
     countDown: 5,
     role: 1,
     description: { en: "Magtakda o mag-alis ng nickname ng lahat sa kasalukuyang GC" },
