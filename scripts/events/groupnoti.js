@@ -18,6 +18,7 @@ module.exports = {
     en: {
       newAdmin: "[ GROUP UPDATE ]\n» New Admin\n\n%1 is now an admin",
       removeAdmin: "[ GROUP UPDATE ]\n» %1 has been removed as admin",
+      changeNickname: "[ GROUP UPDATE ]\n» %1",
       changeThreadName: "[ GROUP UPDATE ]\n» %1",
       changeThreadIcon: "[ GROUP UPDATE ]\n» %1\n» Original Icon: %2",
       threadCall: "[ GROUP UPDATE ]\n» %1",
