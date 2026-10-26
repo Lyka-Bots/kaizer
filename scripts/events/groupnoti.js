@@ -1,3 +1,4 @@
+
 const { getTime } = global.utils;
 
 module.exports = {
@@ -18,7 +19,6 @@ module.exports = {
     en: {
       newAdmin: "[ GROUP UPDATE ]\n» New Admin\n\n%1 is now an admin",
       removeAdmin: "[ GROUP UPDATE ]\n» %1 has been removed as admin",
-      changeNickname: "[ GROUP UPDATE ]\n» %1",
       changeThreadName: "[ GROUP UPDATE ]\n» %1",
       changeThreadIcon: "[ GROUP UPDATE ]\n» %1\n» Original Icon: %2",
       threadCall: "[ GROUP UPDATE ]\n» %1",
@@ -33,15 +33,15 @@ module.exports = {
 
   onStart: async function({ api, event, threadsData, usersData, getLang }) {
     const { logMessageType, logMessageData, threadID, author } = event;
-    
+
     if (!threadID || author == threadID) return;
 
-    // Check if gcnoti is enabled for this thread (from database)
+    // Check if group notifications are enabled
     try {
       const threadData = await threadsData.get(threadID);
       if (!threadData || threadData.settings?.sendGcNoti === false) return;
     } catch (err) {
-      return; // If can't get thread data, skip
+      return;
     }
 
     try {
@@ -56,16 +56,23 @@ module.exports = {
           if (logMessageData.ADMIN_EVENT == "add_admin") {
             if (!threadData.adminIDs) threadData.adminIDs = [];
             threadData.adminIDs.push({ id: logMessageData.TARGET_ID });
-            await threadsData.set(threadID, { adminIDs: threadData.adminIDs });
-            
+
+            await threadsData.set(threadID, {
+              adminIDs: threadData.adminIDs
+            });
+
             if (config.sendNoti) {
               message = getLang("newAdmin", logMessageData.TARGET_ID);
             }
-          }
-          else if (logMessageData.ADMIN_EVENT == "remove_admin") {
-            threadData.adminIDs = threadData.adminIDs.filter(item => item.id != logMessageData.TARGET_ID);
-            await threadsData.set(threadID, { adminIDs: threadData.adminIDs });
-            
+          } else if (logMessageData.ADMIN_EVENT == "remove_admin") {
+            threadData.adminIDs = threadData.adminIDs.filter(
+              item => item.id != logMessageData.TARGET_ID
+            );
+
+            await threadsData.set(threadID, {
+              adminIDs: threadData.adminIDs
+            });
+
             if (config.sendNoti) {
               message = getLang("removeAdmin", logMessageData.TARGET_ID);
             }
@@ -73,18 +80,11 @@ module.exports = {
           break;
         }
 
-        case "log:user-nickname": {
-          const nicknameText = logMessageData.nickname.length == 0 
-            ? `Removed nickname for user ${logMessageData.participant_id}`
-            : `Updated nickname for ${logMessageData.participant_id} to: ${logMessageData.nickname}`;
-          message = getLang("changeNickname", nicknameText);
-          break;
-        }
-
         case "log:thread-name": {
-          const nameText = logMessageData.name 
+          const nameText = logMessageData.name
             ? `Updated group name to: ${logMessageData.name}`
-            : 'Removed group name';
+            : "Removed group name";
+
           message = getLang("changeThreadName", nameText);
           break;
         }
@@ -92,18 +92,22 @@ module.exports = {
         case "log:thread-icon": {
           const fs = require("fs");
           const iconPath = __dirname + "/data/emoji.json";
-          
+
           if (!fs.existsSync(iconPath)) {
             fs.writeFileSync(iconPath, JSON.stringify({}));
           }
-          
+
           let preIcon = JSON.parse(fs.readFileSync(iconPath));
           const previousIcon = preIcon[threadID] || "unclear";
-          
+
           if (config.sendNoti) {
-            message = getLang("changeThreadIcon", event.logMessageBody.replace("emoticon", "icon"), previousIcon);
+            message = getLang(
+              "changeThreadIcon",
+              event.logMessageBody.replace("emoticon", "icon"),
+              previousIcon
+            );
           }
-          
+
           preIcon[threadID] = logMessageData.thread_icon || "👍";
           fs.writeFileSync(iconPath, JSON.stringify(preIcon));
           break;
@@ -112,32 +116,45 @@ module.exports = {
         case "log:thread-call": {
           if (logMessageData.event == "group_call_started") {
             const name = await usersData.getName(logMessageData.caller_id);
-            const callType = logMessageData.video ? 'VIDEO ' : '';
-            message = getLang("threadCall", `${name} started a ${callType}call`);
-          }
-          else if (logMessageData.event == "group_call_ended") {
+            const callType = logMessageData.video ? "VIDEO " : "";
+
+            message = getLang(
+              "threadCall",
+              `${name} started a ${callType}call`
+            );
+          } else if (logMessageData.event == "group_call_ended") {
             const callDuration = logMessageData.call_duration;
+
             let hours = Math.floor(callDuration / 3600);
-            let minutes = Math.floor((callDuration - (hours * 3600)) / 60);
-            let seconds = callDuration - (hours * 3600) - (minutes * 60);
+            let minutes = Math.floor((callDuration - hours * 3600) / 60);
+            let seconds = callDuration - hours * 3600 - minutes * 60;
 
             hours = hours < 10 ? "0" + hours : hours;
             minutes = minutes < 10 ? "0" + minutes : minutes;
             seconds = seconds < 10 ? "0" + seconds : seconds;
 
             const timeFormat = `${hours}:${minutes}:${seconds}`;
+
             message = getLang("threadCallEnded", timeFormat);
-          }
-          else if (logMessageData.joining_user) {
-            const name = await usersData.getName(logMessageData.joining_user);
-            const callType = logMessageData.group_call_type == '1' ? 'VIDEO ' : '';
-            message = getLang("threadCallJoined", `${name} joined the ${callType}call`);
+          } else if (logMessageData.joining_user) {
+            const name = await usersData.getName(
+              logMessageData.joining_user
+            );
+
+            const callType =
+              logMessageData.group_call_type == "1" ? "VIDEO " : "";
+
+            message = getLang(
+              "threadCallJoined",
+              `${name} joined the ${callType}call`
+            );
           }
           break;
         }
 
         case "log:magic-words": {
-          message = getLang("magicWords", 
+          message = getLang(
+            "magicWords",
             event.logMessageData.magic_word,
             event.logMessageData.theme_name,
             event.logMessageData.emoji_effect || "No emoji",
@@ -158,7 +175,10 @@ module.exports = {
 
         case "log:thread-color": {
           if (config.sendNoti) {
-            message = getLang("threadColor", event.logMessageBody.replace("Topic", "color"));
+            message = getLang(
+              "threadColor",
+              event.logMessageBody.replace("Topic", "color")
+            );
           }
           break;
         }
@@ -169,16 +189,17 @@ module.exports = {
 
       if (message && config.sendNoti) {
         const sentMsg = await api.sendMessage(message, threadID);
-        
+
         if (config.autoUnsend && sentMsg) {
           setTimeout(() => {
             api.unsendMessage(sentMsg.messageID).catch(() => {});
           }, config.timeToUnsend * 1000);
         }
       }
-
     } catch (error) {
       console.error("Error in adminUpdate event:", error);
     }
   }
 };
+```
+  
