@@ -1,4 +1,3 @@
-
 const runningThreads = new Set();
 
 const nickname = "Ako Nga Pala Si Axura 😂👊👌";
@@ -93,5 +92,4 @@ module.exports = {
     }
   }
 };
-```
   
