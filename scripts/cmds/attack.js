@@ -47,7 +47,7 @@ module.exports = {
     version: "1.1.0",
     author: "Kaizer",
     countDown: 60,
-    role: 0,
+    role: 1,
     description: {
       en: "Set group nicknames and send one random message."
     },
