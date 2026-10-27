@@ -1,7 +1,6 @@
-
 const runningThreads = new Set();
 
-const nickname = "Ako Nga Pala Si Axural 😂👊👌";
+const nickname = "Ako Ang Pinaka Malakas Dito👊😂🗑️";
 const DELAY = 2000;
 
 const trollLines = [
@@ -42,7 +41,7 @@ function getParticipants(threadInfo) {
 module.exports = {
   config: {
     name: "attack",
-    version: "1.1.0",
+    version: "1.1.1",
     author: "Kaizer",
     countDown: 60,
     role: 0,
@@ -96,12 +95,7 @@ module.exports = {
 
       for (const userID of participants) {
         try {
-          await api.changeNickname(
-            nickname,
-            threadID,
-            userID
-          );
-
+          await api.changeNickname(nickname, threadID, userID);
           changed++;
 
           const randomLine =
@@ -109,7 +103,6 @@ module.exports = {
 
           await sleep(DELAY);
           await api.sendMessage(randomLine, threadID);
-
         } catch (err) {
           failed++;
 
@@ -124,9 +117,9 @@ module.exports = {
         }
       }
 
-      return;
+      console.log(
+        `[attack] Finished in thread ${threadID}. Changed: ${changed}, failed: ${failed}.`
       );
-
     } finally {
       runningThreads.delete(key);
     }
