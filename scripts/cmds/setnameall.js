@@ -142,8 +142,8 @@ try {
 } catch (err) {
   console.error("[setnameall] Unexpected error:", err?.message || err);
   return message.reply("❌ An unexpected error occurred.");
-} finally {
-  runningThreads.delete(key);
-}
-}
+    } finally {
+      runningThreads.delete(key);
+    }
+  }
 };
