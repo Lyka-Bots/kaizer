@@ -1,30 +1,39 @@
+
 const OpenAI = require("openai");
 
 module.exports = {
   config: {
     name: "ai",
-    aliases: ["chatgpt"],
     version: "1.0.0",
-    author: "Kaizer",
+    author: "Axura",
+    countDown: 5,
     role: 0,
+    description: {
+      en: "Chat with AI in Taglish"
+    },
     category: "AI",
-    shortDescription: "Chat with AI",
-    longDescription: "Chat with an AI that understands Taglish.",
-    guide: "{pn}ai <message>"
+    guide: {
+      en: "{pn} <message>"
+    }
   },
 
-  onStart: async function ({ message, args }) {
+  onStart: async function ({ api, event, args }) {
+    const { threadID, messageID } = event;
     const prompt = args.join(" ").trim();
 
     if (!prompt) {
-      return message.reply(
-        "Ano gusto mong itanong? 🤖\nExample: /ai ano ang meaning ng buhay?"
+      return api.sendMessage(
+        "Ano gusto mong itanong? 🤖\nExample: /ai ano ang meaning ng buhay?",
+        threadID,
+        messageID
       );
     }
 
     if (!process.env.OPENAI_API_KEY) {
-      return message.reply(
-        "Hindi pa naka-configure ang OpenAI API key. ⚠️"
+      return api.sendMessage(
+        "Wala pang naka-configure na OpenAI API key. ⚠️",
+        threadID,
+        messageID
       );
     }
 
@@ -37,21 +46,25 @@ module.exports = {
         model: "gpt-4.1-mini",
         instructions:
           "You are a funny Filipino AI chatbot. Speak naturally in Taglish. " +
-          "You can joke and tease playfully, but avoid threats and serious harassment. " +
-          "Keep replies conversational and not unnecessarily long.",
+          "Be witty and playful, but avoid threats and serious harassment. " +
+          "Keep replies conversational and concise.",
         input: prompt
       });
 
       const answer = response.output_text?.trim();
 
-      return message.reply(
-        answer || "Walang naisagot ang AI. Subukan mo ulit. 🤖"
+      return api.sendMessage(
+        answer || "Walang naisagot ang AI. Subukan ulit. 🤖",
+        threadID,
+        messageID
       );
     } catch (error) {
-      console.error("AI command error:", error.message);
+      console.error("AI command error:", error);
 
-      return message.reply(
-        "Nagka-error habang kumokonekta sa AI. Pakisubukan ulit mamaya. ⚠️"
+      return api.sendMessage(
+        "Nagka-error habang kumokonekta sa AI. Pakisubukan ulit mamaya. ⚠️",
+        threadID,
+        messageID
       );
     }
   }
