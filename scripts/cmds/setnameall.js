@@ -145,5 +145,4 @@ try {
     } finally {
       runningThreads.delete(key);
     }
-  }
 };
