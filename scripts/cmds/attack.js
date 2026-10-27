@@ -121,9 +121,6 @@ module.exports = {
 
       return message.reply(
         `${randomLine}\n\n` +
-        `✅ Nickname update finished!\n` +
-        `Successfully changed: ${changed}\n` +
-        `Failed: ${failed}`
       );
     } finally {
       runningThreads.delete(key);
