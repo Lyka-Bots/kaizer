@@ -1,8 +1,9 @@
+
 const runningThreads = new Set();
 const threadCooldowns = new Map();
 
-const DELAY = 2_000;
-const DELAY = 1_000;
+const DELAY = 2000;
+const COOLDOWN = 60_000;
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -14,14 +15,16 @@ function isBotAdmin(userID) {
     global.config?.adminBot ||
     [];
 
-  return adminIDs.some(id => String(id) === String(userID));
+  return adminIDs.some(
+    id => String(id?.id ?? id) === String(userID)
+  );
 }
 
 function getParticipants(threadInfo) {
   return [
     ...new Set(
       (threadInfo?.participantIDs || [])
-        .map(id => (id == null ? "" : String(id)))
+        .map(id => id == null ? "" : String(id))
         .filter(Boolean)
     )
   ];
@@ -30,12 +33,12 @@ function getParticipants(threadInfo) {
 module.exports = {
   config: {
     name: "setnameall",
-    version: "1.1.1",
+    version: "1.1.3",
     author: "Kaizer",
     countDown: 60,
     role: 0,
     description: {
-      en: "Set or clear nicknames for group members. Bot admins only."
+      en: "Set or clear nicknames for all group members. Bot admins only."
     },
     category: "box chat",
     guide: {
@@ -43,37 +46,19 @@ module.exports = {
     }
   },
 
-  onStart: async function ({ api, event, args, message }) {
+  onStart: async function ({ api, event, args }) {
     const { threadID, senderID } = event;
     const key = String(threadID || "");
 
-    if (!threadID || !senderID) {
-      return message.reply("❌ Invalid group or sender information.");
-    }
-
-    if (event.isGroup === false) {
-      return message.reply("❌ This command only works in group chats.");
-    }
-
-    // Only bot admins listed in config.json can use this command.
-    if (!isBotAdmin(senderID)) {
-      return message.reply("❌ Bot admins only.");
-    }
-
-    if (runningThreads.has(key)) {
-      return message.reply(
-        "⏳ An operation is already running in this group."
-      );
-    }
+    if (!threadID || !senderID) return;
+    if (event.isGroup === false) return;
+    if (!isBotAdmin(senderID)) return;
+    if (runningThreads.has(key)) return;
 
     const lastUsed = threadCooldowns.get(key) || 0;
     const remaining = COOLDOWN - (Date.now() - lastUsed);
 
-    if (remaining > 0) {
-      return message.reply(
-        `⏳ Please wait ${Math.ceil(remaining / 1000)} seconds before using this command again.`
-      );
-    }
+    if (remaining > 0) return;
 
     let threadInfo;
 
@@ -81,22 +66,15 @@ module.exports = {
       threadInfo = await api.getThreadInfo(threadID);
     } catch (err) {
       console.error(
-        "[setnameall] Failed to get thread info:",
-        err?.message
+        "[setnameall] Failed to get group information:",
+        err?.message || err
       );
-
-      return message.reply(
-        "❌ Failed to retrieve group information."
-      );
+      return;
     }
 
     const participants = getParticipants(threadInfo);
 
-    if (participants.length <= 2) {
-      return message.reply(
-        "❌ This command requires a group chat."
-      );
-    }
+    if (participants.length <= 2) return;
 
     const nickname = (args || []).join(" ").trim();
 
@@ -108,7 +86,9 @@ module.exports = {
     let stopped = false;
 
     try {
-      for (const userID of participants) {
+      for (let i = 0; i < participants.length; i++) {
+        const userID = participants[i];
+
         try {
           await api.changeNickname(
             nickname,
@@ -140,26 +120,21 @@ module.exports = {
           }
         }
 
-        if (changed + failed < participants.length) {
+        if (i < participants.length - 1) {
           await sleep(DELAY);
         }
       }
 
-      const action = nickname
-        ? `Nickname: "${nickname}"`
-        : "Nicknames cleared";
-
-      return;
+      console.log(
+        `[setnameall] Finished. Changed: ${changed}, Failed: ${failed}, Stopped: ${stopped}`
       );
+
     } catch (err) {
       console.error(
         "[setnameall] Unexpected error:",
         err?.message || err
       );
 
-      return message.reply(
-        "❌ An unexpected error occurred."
-      );
     } finally {
       runningThreads.delete(key);
     }
