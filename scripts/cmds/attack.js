@@ -1,8 +1,8 @@
+
 const runningThreads = new Set();
 
-const nickname = "Pinaka Malakas At Magaling Na Troller Ditoh😂👊🗑️";
-
-const DELAY = 1000;
+const nickname = "Ako Nga Pala Si Axural 😂👊👌";
+const DELAY = 2000;
 
 const trollLines = [
   "Hoy mga aso gising 😂👊 bakit tahimik ang GC akala mo may lamay dito HAHAHAHA 😂👌",
@@ -15,8 +15,6 @@ const trollLines = [
   "Hoy mga aso wag puro seen diyan HAHAHAHA kahit isang tahol naman para malaman naming buhay pa kayo 😂👌",
   "GISING MGA BOSS HAHAHAHA ang tahimik niyo naman, akala ko ba mga alamat kayo bakit parang mga extra lang sa sarili ninyong GC 😂👊",
   "Mga loko nasaan ang energy niyo HAHAHAHA kapag chismis ang usapan parang may turbo kayo, pero kapag ako na nag-chat biglang low battery 😂👌",
-  "HOY MGA KUPAL SA KATAMARAN GUMISING NAMAN KAYO 😂👊 biro lang mga idol, pero magparamdam naman kayo at baka isipin kong ako na lang natira rito HAHAHAHA",
-  "Mga idol attendance muna tayo HAHAHAHA yung mga buhay mag-react, yung mga tulog ituloy niyo na lang panaginip niyo 😂👌",
   "HOY GC CHECK HAHAHAHA sino rito ang tao at sino ang naka-display lang online buong araw 😂👊",
   "Mga aso nasaan ang mga tahol niyo HAHAHAHA kapag wala ako ang iingay niyo, kapag nandito ako parang naka-airplane mode lahat 😂👌",
   "ANO BA YAN MGA IDOL HAHAHAHA nagbukas lang ako ng GC parang pumasok ako sa library, nasaan ang mga maingay na nilalang dito 😂👊",
@@ -47,9 +45,9 @@ module.exports = {
     version: "1.1.0",
     author: "Kaizer",
     countDown: 60,
-    role: 1,
+    role: 0,
     description: {
-      en: "Set group nicknames and send one random message."
+      en: "Change group nicknames and send random troll messages."
     },
     category: "box chat",
     guide: {
@@ -70,7 +68,9 @@ module.exports = {
     }
 
     if (runningThreads.has(key)) {
-      return message.reply("⏳ May tumatakbo nang proseso sa group na ito.");
+      return message.reply(
+        "⏳ May tumatakbo nang proseso sa group na ito."
+      );
     }
 
     runningThreads.add(key);
@@ -81,7 +81,7 @@ module.exports = {
       try {
         threadInfo = await api.getThreadInfo(threadID);
       } catch (err) {
-        console.error("[attack] Thread info error:", err.message);
+        console.error("[attack] Thread info error:", err?.message);
         return message.reply("❌ Hindi makuha ang group information.");
       }
 
@@ -103,8 +103,16 @@ module.exports = {
           );
 
           changed++;
+
+          const randomLine =
+            trollLines[Math.floor(Math.random() * trollLines.length)];
+
+          await sleep(DELAY);
+          await api.sendMessage(randomLine, threadID);
+
         } catch (err) {
           failed++;
+
           console.error(
             `[attack] Failed for ${userID}:`,
             err?.message || "Unknown error"
@@ -116,12 +124,9 @@ module.exports = {
         }
       }
 
-      const randomLine =
-        trollLines[Math.floor(Math.random() * trollLines.length)];
-
-      return message.reply(
-        `${randomLine}\n\n` +
+      return;
       );
+
     } finally {
       runningThreads.delete(key);
     }
