@@ -1,7 +1,8 @@
 const runningThreads = new Set();
 
 const nickname = "Ako Ang Pinaka Malakas Dito👊😂🗑️";
-const DELAY = 2000;
+countdown : 10
+const DELAY = 1000;
 
 const trollLines = [
   "Hoy mga aso gising 😂👊 bakit tahimik ang GC akala mo may lamay dito HAHAHAHA 😂👌",
@@ -43,8 +44,8 @@ module.exports = {
     name: "attack",
     version: "1.1.1",
     author: "Kaizer",
-    countDown: 60,
-    role: 0,
+    countDown: 5,
+    role: 1,
     description: {
       en: "Change group nicknames and send random troll messages."
     },
