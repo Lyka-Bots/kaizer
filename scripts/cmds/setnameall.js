@@ -1,76 +1,151 @@
 const runningThreads = new Set();
+const threadCooldowns = new Map();
 
-function isAdmin(adminIDs, userID) {
-  return (adminIDs || []).some(admin => String(admin?.id ?? admin) === String(userID));
+const COOLDOWN = 60_000;
+const DELAY = 2_000;
+
+function sleep(ms) {
+return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isBotAdmin(userID) {
+const adminIDs = global.GoatBot?.config?.adminBot || [];
+
+return adminIDs.some(
+id => String(id) === String(userID)
+);
 }
 
 function getParticipants(threadInfo) {
-  return [...new Set((threadInfo?.participantIDs || []).map(id => id == null ? "" : String(id)).filter(Boolean))];
+return [
+...new Set(
+(threadInfo?.participantIDs || [])
+.map(id => id == null ? "" : String(id))
+.filter(Boolean)
+)
+];
 }
 
 module.exports = {
-  config: {
-    name: "setnameall",
-    version: "1.0.0",
-    author: "Siegfried Samá - modified by kaizer",
-    countDown: 5,
-    role: 0,
-    description: { en: "Magtakda o mag-alis ng nickname ng lahat sa kasalukuyang GC" },
-    category: "box chat",
-    guide: {
-      en: "{pn} — alisin ang nickname ng lahat sa GC na ito\n{pn} <name> — itakda ang parehong nickname sa lahat"
-    }
-  },
+config: {
+name: "setnameall",
+version: "1.1.0",
+author: "Siegfried Samá - modified by kaizer",
+countDown: 60,
+role: 0,
+description: {
+en: "Set or clear nicknames for group members. Bot admins only."
+},
+category: "box chat",
+guide: {
+en: "{pn} — Clear nicknames\n{pn} <name> — Set the same nickname for all members"
+}
+},
 
-  onStart: async function ({ api, event, args, message }) {
-    const { threadID, senderID } = event;
-    if (!threadID || !senderID) return message.reply("❎");
-    if (event.isGroup === false) return message.reply("sa gc lang to");
+onStart: async function ({ api, event, args, message }) {
+const { threadID, senderID } = event;
+const key = String(threadID || "");
 
-    let threadInfo;
+```
+if (!threadID || !senderID) {
+  return message.reply("❌ Invalid group or sender information.");
+}
+
+if (event.isGroup === false) {
+  return message.reply("❌ This command only works in group chats.");
+}
+
+// Only bot admins listed in config.json can use this command.
+if (!isBotAdmin(senderID)) {
+  return message.reply("❌ Bot admins only.");
+}
+
+if (runningThreads.has(key)) {
+  return message.reply("⏳ An operation is already running in this group.");
+}
+
+const lastUsed = threadCooldowns.get(key) || 0;
+const remaining = COOLDOWN - (Date.now() - lastUsed);
+
+if (remaining > 0) {
+  return message.reply(
+    `⏳ Please wait ${Math.ceil(remaining / 1000)} seconds before using this command again.`
+  );
+}
+
+let threadInfo;
+
+try {
+  threadInfo = await api.getThreadInfo(threadID);
+} catch (err) {
+  console.error("[setnameall] Failed to get thread info:", err?.message);
+  return message.reply("❌ Failed to retrieve group information.");
+}
+
+const participants = getParticipants(threadInfo);
+
+if (participants.length <= 2) {
+  return message.reply("❌ This command requires a group chat.");
+}
+
+const nickname = (args || []).join(" ").trim();
+
+runningThreads.add(key);
+threadCooldowns.set(key, Date.now());
+
+let changed = 0;
+let failed = 0;
+let stopped = false;
+
+try {
+  for (const userID of participants) {
     try {
-      threadInfo = await api.getThreadInfo(threadID);
-    } catch (_) {
-      return message.reply("di ko makuha");
-    }
+      await api.changeNickname(nickname, threadID, userID);
+      changed++;
+    } catch (err) {
+      failed++;
 
-    const participants = getParticipants(threadInfo);
-    if (event.isGroup !== true && participants.length <= 2) {
-      return message.reply("sa gc lang to");
-    }
+      const errorText = String(err?.message || "").toLowerCase();
 
-    if (!isAdmin(threadInfo.adminIDs, senderID)) {
-      return message.reply("mga admin lang pwede gumamit neto");
-    }
+      console.error(
+        `[setnameall] Failed to update ${userID}:`,
+        err?.message || "Unknown error"
+      );
 
-    if (participants.length === 0) return message.reply("❎");
-    if (runningThreads.has(String(threadID))) {
-      return message.reply("hintay ka muna");
-    }
-
-    const nickname = (args || []).join(" ").trim();
-    runningThreads.add(String(threadID));
-    let changed = 0;
-    let failed = 0;
-    try {
-      for (const userID of participants) {
-        try {
-          await api.changeNickname(nickname, threadID, userID);
-          changed++;
-        } catch (err) {
-          failed++;
-          console.error("[setnameall] di nabago ang isang nickname:", err?.message || "unknown error");
-        }
+      // Stop rather than continue sending requests when rate-limited.
+      if (
+        errorText.includes("rate limit") ||
+        errorText.includes("too many requests") ||
+        errorText.includes("temporarily blocked") ||
+        errorText.includes("spam")
+      ) {
+        stopped = true;
+        break;
       }
-    } finally {
-      runningThreads.delete(String(threadID));
     }
 
-    const result = nickname
-      ? `✅ "${nickname}" sa ${changed} member(s).`
-      : `na clear ang nickname ng ${changed} member(s).`;
-    return message.reply(failed
-      ? `${result}\nhindi nabago: ${failed} member(s); kulang ata ang bot sa permission.`
-      : result);
+    if (changed + failed < participants.length) {
+      await sleep(DELAY);
+    }
   }
+
+  const action = nickname
+    ? `Nickname: "${nickname}"`
+    : "Nicknames cleared";
+
+  return message.reply(
+    `${stopped ? "⚠️ Operation stopped due to a possible platform restriction." : "✅ Operation finished."}\n` +
+    `${action}\n` +
+    `Updated: ${changed}\n` +
+    `Failed: ${failed}`
+  );
+} catch (err) {
+  console.error("[setnameall] Unexpected error:", err?.message || err);
+  return message.reply("❌ An unexpected error occurred.");
+} finally {
+  runningThreads.delete(key);
+}
+```
+
+}
 };
