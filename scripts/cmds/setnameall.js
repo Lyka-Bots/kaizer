@@ -149,11 +149,7 @@ module.exports = {
         ? `Nickname: "${nickname}"`
         : "Nicknames cleared";
 
-      return message.reply(
-        `${stopped
-          ? "⚠️ Operation stopped due to a possible platform restriction."
-          : "✅ Operation finished."
-        }\n${action}\nUpdated: ${changed}\nFailed: ${failed}`
+      return;
       );
     } catch (err) {
       console.error(
