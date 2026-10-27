@@ -16,7 +16,7 @@ module.exports = {
   config: {
     name: "attack",
     version: "1.0.3",
-    author: "Siegfried Samá - modified by kaizer",
+    author: "Kaizer",
     countDown: 5,
     role: 0,
     description: {
