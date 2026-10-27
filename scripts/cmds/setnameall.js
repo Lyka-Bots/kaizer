@@ -7,15 +7,16 @@ const DELAY = 2_000;
 function sleep(ms) {
 return new Promise(resolve => setTimeout(resolve, ms));
 }
-
 function isBotAdmin(userID) {
-const adminIDs = global.GoatBot?.config?.adminBot || [];
+  const adminIDs =
+    global.GoatBot?.config?.adminBot ||
+    global.config?.adminBot ||
+    [];
 
-return adminIDs.some(
-id => String(id) === String(userID)
-);
+  return adminIDs.some(
+    id => String(id) === String(userID)
+  );
 }
-
 function getParticipants(threadInfo) {
 return [
 ...new Set(
