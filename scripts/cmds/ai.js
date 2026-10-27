@@ -5,7 +5,7 @@ module.exports = {
   config: {
     name: "ai",
     version: "1.0.0",
-    author: "Axura",
+    author: "Kaizer",
     countDown: 5,
     role: 0,
     description: {
