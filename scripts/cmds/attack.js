@@ -2,6 +2,35 @@ const runningThreads = new Set();
 
 const nickname = "Pinaka Malakas At Magaling Na Troller Ditoh😂👊🗑️";
 
+const DELAY = 1000;
+
+const trollLines = [
+  "Hoy mga aso gising 😂👊 bakit tahimik ang GC akala mo may lamay dito HAHAHAHA 😂👌",
+  "Mga ulol nasaan na kayo HAHAHAHA kanina ang iingay niyo tapos ngayon parang mga nawawalang sisiw 😂👊",
+  "HOY MGA TAMBAY GUMALAW GALAW NAMAN KAYO 😂👊 online kayo lahat pero parang mga multo sa GC HAHAHAHA",
+  "Gising mga idol HAHAHAHA anong oras na tulog pa rin mga utak niyo 😂👌👊",
+  "Hoy mga tahimik diyan labas naman kayo sa lungga niyo HAHAHAHA hindi ako nangangagat, minsan lang mang-asar 😂👊",
+  "ANO NA MGA BOSSING HAHAHAHA nag-chat lang ako biglang nagkanya-kanyang taguan na naman kayo 😂👌",
+  "Mga idol buhay pa ba kayo o kailangan ko pang magpa-anunsyo sa buong barangay para magparamdam kayo 😂👊",
+  "Hoy mga aso wag puro seen diyan HAHAHAHA kahit isang tahol naman para malaman naming buhay pa kayo 😂👌",
+  "GISING MGA BOSS HAHAHAHA ang tahimik niyo naman, akala ko ba mga alamat kayo bakit parang mga extra lang sa sarili ninyong GC 😂👊",
+  "Mga loko nasaan ang energy niyo HAHAHAHA kapag chismis ang usapan parang may turbo kayo, pero kapag ako na nag-chat biglang low battery 😂👌",
+  "HOY MGA KUPAL SA KATAMARAN GUMISING NAMAN KAYO 😂👊 biro lang mga idol, pero magparamdam naman kayo at baka isipin kong ako na lang natira rito HAHAHAHA",
+  "Mga idol attendance muna tayo HAHAHAHA yung mga buhay mag-react, yung mga tulog ituloy niyo na lang panaginip niyo 😂👌",
+  "HOY GC CHECK HAHAHAHA sino rito ang tao at sino ang naka-display lang online buong araw 😂👊",
+  "Mga aso nasaan ang mga tahol niyo HAHAHAHA kapag wala ako ang iingay niyo, kapag nandito ako parang naka-airplane mode lahat 😂👌",
+  "ANO BA YAN MGA IDOL HAHAHAHA nagbukas lang ako ng GC parang pumasok ako sa library, nasaan ang mga maingay na nilalang dito 😂👊",
+  "Hoy mga alamat magparamdam naman kayo HAHAHAHA puro kayo online status pero walang ambag sa ingay 😂👌",
+  "MGA BOSSING GISING 😂👊 hindi pa tapos ang araw, bakit parang lahat kayo nag-resign sa pagiging maingay sa GC HAHAHAHA",
+  "Hoy mga lods baka naman HAHAHAHA kahit emoji lang ihulog niyo rito para may ebidensiya akong hindi ako nakikipag-usap sa pader 😂👌",
+  "Mga idol anong meron bakit tahimik HAHAHAHA may meeting ba ang mga multo o sabay-sabay lang kayong nag-AFK 😂👊",
+  "HOY MGA ASO ATTENDANCE 😂👊 isang tahol para sa mga gising, dalawang tahol para sa mga gutom, at tatlong tahol para sa mga kunwari busy HAHAHAHA"
+];
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function getParticipants(threadInfo) {
   return [
     ...new Set(
@@ -15,35 +44,36 @@ function getParticipants(threadInfo) {
 module.exports = {
   config: {
     name: "attack",
-    version: "1.0.3",
-    author: "Siegfried Sama - Modified By Kaizer",
-    countDown: 5,
+    version: "1.1.0",
+    author: "Kaizer",
+    countDown: 60,
     role: 0,
     description: {
-      en: "Set the nickname of all group members to a fixed name."
+      en: "Set group nicknames and send one random message."
     },
     category: "box chat",
     guide: {
-      en: "{pn} — Set everyone's nickname to the configured name."
+      en: "{pn}"
     }
   },
 
   onStart: async function ({ api, event, message }) {
     const { threadID, senderID } = event;
+    const key = String(threadID || "");
 
     if (!threadID || !senderID) {
       return message.reply("❌ Invalid group or sender information.");
     }
 
     if (event.isGroup === false) {
-      return message.reply("This command can only be used in group chats.");
+      return message.reply("❌ Group chats only.");
     }
 
-    if (runningThreads.has(String(threadID))) {
-      return message.reply("⏳ Another process is already running in this group. Please wait.");
+    if (runningThreads.has(key)) {
+      return message.reply("⏳ May tumatakbo nang proseso sa group na ito.");
     }
 
-    runningThreads.add(String(threadID));
+    runningThreads.add(key);
 
     try {
       let threadInfo;
@@ -51,14 +81,14 @@ module.exports = {
       try {
         threadInfo = await api.getThreadInfo(threadID);
       } catch (err) {
-        console.error("[attack] Failed to retrieve group information:", err?.message);
-        return message.reply("❌ Failed to retrieve group information.");
+        console.error("[attack] Thread info error:", err.message);
+        return message.reply("❌ Hindi makuha ang group information.");
       }
 
       const participants = getParticipants(threadInfo);
 
       if (participants.length <= 2) {
-        return message.reply("This command can only be used in group chats.");
+        return message.reply("❌ Group chats only.");
       }
 
       let changed = 0;
@@ -76,17 +106,27 @@ module.exports = {
         } catch (err) {
           failed++;
           console.error(
-            `[attack] Failed to update nickname for ${userID}:`,
+            `[attack] Failed for ${userID}:`,
             err?.message || "Unknown error"
           );
         }
+
+        if (changed + failed < participants.length) {
+          await sleep(DELAY);
+        }
       }
 
-      return;
+      const randomLine =
+        trollLines[Math.floor(Math.random() * trollLines.length)];
+
+      return message.reply(
+        `${randomLine}\n\n` +
+        `✅ Nickname update finished!\n` +
+        `Successfully changed: ${changed}\n` +
+        `Failed: ${failed}`
       );
     } finally {
-      runningThreads.delete(String(threadID));
+      runningThreads.delete(key);
     }
   }
 };
-  
