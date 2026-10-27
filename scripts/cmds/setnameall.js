@@ -1,8 +1,8 @@
 const runningThreads = new Set();
 const threadCooldowns = new Map();
 
-const COOLDOWN = 60_000;
 const DELAY = 2_000;
+const DELAY = 1_000;
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
