@@ -82,10 +82,7 @@ module.exports = {
         }
       }
 
-      return message.reply(
-        `✅ Nickname: "${nickname}"\n` +
-        `Successfully updated: ${changed} member(s)\n` +
-        `Failed: ${failed} member(s)`
+      return;
       );
     } finally {
       runningThreads.delete(String(threadID));
