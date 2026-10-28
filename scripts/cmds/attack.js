@@ -1,8 +1,8 @@
 const runningThreads = new Set();
 
 const nickname = "Ako Ang Pinaka Malakas Dito👊😂🗑️";
-const COOLDOWN_MS = 5;
-const DELAY_MS = 1;
+const COOLDOWN_MS = 10;
+const DELAY_MS = 5;
 
 
 const trollLines = [
