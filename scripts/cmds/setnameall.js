@@ -2,7 +2,7 @@
 const runningThreads = new Set();
 const threadCooldowns = new Map();
 
-const DELAY = 2000;
+const DELAY = 1000;
 const COOLDOWN = 60_000;
 
 function sleep(ms) {
@@ -10,14 +10,23 @@ function sleep(ms) {
 }
 
 function isBotAdmin(userID) {
-  const adminIDs =
-    global.GoatBot?.config?.adminBot ||
-    global.config?.adminBot ||
+  const configuredAdmins =
+    global.GoatBot?.config?.adminBot ??
+    global.config?.adminBot ??
     [];
 
-  return adminIDs.some(
-    id => String(id?.id ?? id) === String(userID)
-  );
+  const adminIDs = Array.isArray(configuredAdmins)
+    ? configuredAdmins
+    : [configuredAdmins];
+
+  return adminIDs.some(admin => {
+    const id =
+      typeof admin === "object" && admin !== null
+        ? admin.id ?? admin.uid ?? admin.userID
+        : admin;
+
+    return id != null && String(id) === String(userID);
+  });
 }
 
 function getParticipants(threadInfo) {
@@ -33,7 +42,7 @@ function getParticipants(threadInfo) {
 module.exports = {
   config: {
     name: "setnameall",
-    version: "1.1.3",
+    version: "1.2.0",
     author: "Kaizer",
     countDown: 60,
     role: 0,
@@ -42,39 +51,51 @@ module.exports = {
     },
     category: "box chat",
     guide: {
-      en: "{pn} — Clear nicknames\n{pn} <name> — Set the same nickname for all members"
+      en: "{pn} <name> — Set nickname for all members\n{pn} — Clear nicknames"
     }
   },
 
-  onStart: async function ({ api, event, args }) {
+  onStart: async function ({ api, event, args, message }) {
     const { threadID, senderID } = event;
     const key = String(threadID || "");
 
     if (!threadID || !senderID) return;
-    if (event.isGroup === false) return;
-    if (!isBotAdmin(senderID)) return;
-    if (runningThreads.has(key)) return;
+    if (event.isGroup === false) {
+      return message.reply("Group chats only.");
+    }
+
+    // Bot owner/admin lang ang puwedeng gumamit.
+    if (!isBotAdmin(senderID)) {
+      return message.reply("Bot owner/admin lang ang puwedeng gumamit nito.");
+    }
+
+    if (runningThreads.has(key)) {
+      return message.reply("May tumatakbo nang setnameall sa GC na ito.");
+    }
 
     const lastUsed = threadCooldowns.get(key) || 0;
     const remaining = COOLDOWN - (Date.now() - lastUsed);
 
-    if (remaining > 0) return;
+    if (remaining > 0) {
+      return message.reply(
+        `Hintay muna ng ${Math.ceil(remaining / 1000)} segundo bago gamitin ulit.`
+      );
+    }
 
     let threadInfo;
 
     try {
       threadInfo = await api.getThreadInfo(threadID);
     } catch (err) {
-      console.error(
-        "[setnameall] Failed to get group information:",
-        err?.message || err
-      );
-      return;
+      console.error("[setnameall] Thread info error:", err?.stack || err);
+      return message.reply("Hindi makuha ang group information. Check bot permissions.");
     }
 
     const participants = getParticipants(threadInfo);
 
-    if (participants.length <= 2) return;
+    if (participants.length === 0) {
+      return message.reply("Walang nakuhang group members.");
+    }
 
     const nickname = (args || []).join(" ").trim();
 
@@ -90,23 +111,16 @@ module.exports = {
         const userID = participants[i];
 
         try {
-          await api.changeNickname(
-            nickname,
-            threadID,
-            userID
-          );
-
+          await api.changeNickname(nickname, threadID, userID);
           changed++;
         } catch (err) {
           failed++;
 
-          const errorText = String(
-            err?.message || ""
-          ).toLowerCase();
+          const errorText = String(err?.message || "").toLowerCase();
 
           console.error(
-            `[setnameall] Failed to update ${userID}:`,
-            err?.message || "Unknown error"
+            `[setnameall] Failed for ${userID}:`,
+            err?.stack || err
           );
 
           if (
@@ -128,13 +142,9 @@ module.exports = {
       console.log(
         `[setnameall] Finished. Changed: ${changed}, Failed: ${failed}, Stopped: ${stopped}`
       );
-
     } catch (err) {
-      console.error(
-        "[setnameall] Unexpected error:",
-        err?.message || err
-      );
-
+      console.error("[setnameall] Unexpected error:", err?.stack || err);
+      return message.reply("Nagkaroon ng error. Tingnan ang bot console.");
     } finally {
       runningThreads.delete(key);
     }
