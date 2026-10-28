@@ -2,7 +2,7 @@ const runningThreads = new Set();
 
 const nickname = "Ako Ang Pinaka Malakas Dito👊😂🗑️";
 const COOLDOWN_MS = 5000;
-const DELAY_MS = 300;
+await sleep(DELAY);
 
 const trollLines = [
   "Hoy mga aso gising 😂👊 bakit tahimik ang GC akala mo may lamay dito HAHAHAHA 😂👌",
