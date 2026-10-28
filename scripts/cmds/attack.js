@@ -1,7 +1,6 @@
 const runningThreads = new Set();
 
 const DELAY = 2000;
-const COOLDOWN = 60_000;
 const nickname = "Ako Ang Pinaka Malakas Dito👊😂🗑️";
 
 const trollLines = [
@@ -42,7 +41,7 @@ function getParticipants(threadInfo) {
 module.exports = {
   config: {
     name: "attack",
-    version: "1.2.0",
+    version: "1.2.1",
     author: "Kaizer",
     countDown: 5,
     role: 1,
@@ -60,9 +59,7 @@ module.exports = {
     const key = String(threadID || "");
 
     if (!threadID || !senderID) {
-      return message.reply(
-        "❌ Invalid group or sender information."
-      );
+      return message.reply("❌ Invalid group or sender information.");
     }
 
     if (event.isGroup === false) {
@@ -70,9 +67,7 @@ module.exports = {
     }
 
     if (runningThreads.has(key)) {
-      return message.reply(
-        "⏳ May tumatakbo nang proseso sa group na ito."
-      );
+      return message.reply("⏳ May tumatakbo nang proseso sa group na ito.");
     }
 
     runningThreads.add(key);
@@ -83,59 +78,30 @@ module.exports = {
       try {
         threadInfo = await api.getThreadInfo(threadID);
       } catch (err) {
-        console.error(
-          "[attack] Thread info error:",
-          err?.stack || err
-        );
-
-        return message.reply(
-          "❌ Hindi makuha ang group information. Check bot permissions."
-        );
+        console.error("[attack] Thread info error:", err?.stack || err);
+        return message.reply("❌ Hindi makuha ang group information. Check bot permissions.");
       }
 
       const participants = getParticipants(threadInfo);
 
       if (participants.length <= 2) {
-        return message.reply(
-          "❌ Kailangan ng group chat na may higit sa dalawang miyembro."
-        );
+        return message.reply("❌ Kailangan ng group chat na may higit sa dalawang miyembro.");
       }
-
-      let changed = 0;
-      let failed = 0;
 
       for (let i = 0; i < participants.length; i++) {
         const userID = participants[i];
 
         try {
-          await api.changeNickname(
-            nickname,
-            threadID,
-            userID
-          );
-
-          changed++;
+          await api.changeNickname(nickname, threadID, userID);
         } catch (err) {
-          failed++;
-
-          console.error(
-            `[attack] Nickname change failed for ${userID}:`,
-            err?.message || err
-          );
+          console.error(`[attack] Nickname change failed for ${userID}:`, err?.message || err);
         }
 
         try {
-          const randomLine =
-            trollLines[
-              Math.floor(Math.random() * trollLines.length)
-            ];
-
+          const randomLine = trollLines[Math.floor(Math.random() * trollLines.length)];
           await api.sendMessage(randomLine, threadID);
         } catch (err) {
-          console.error(
-            "[attack] Message send failed:",
-            err?.message || err
-          );
+          console.error("[attack] Message send failed:", err?.message || err);
         }
 
         if (i < participants.length - 1) {
@@ -143,17 +109,11 @@ module.exports = {
         }
       }
 
+      // Walang completion/progress message sa group.
       return;
-      );
     } catch (err) {
-      console.error(
-        "[attack] Unexpected error:",
-        err?.stack || err
-      );
-
-      return message.reply(
-        "❌ May naganap na error sa attack command. Check bot logs."
-      );
+      console.error("[attack] Unexpected error:", err?.stack || err);
+      return message.reply("❌ May naganap na error sa attack command. Check bot logs.");
     } finally {
       runningThreads.delete(key);
     }
