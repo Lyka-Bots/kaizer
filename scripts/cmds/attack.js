@@ -41,7 +41,7 @@ function getParticipants(threadInfo) {
 module.exports = {
   config: {
     name: "attack",
-    version: "1.1.1",
+    version: "1.2.0",
     author: "Kaizer",
     countDown: 5,
     role: 1,
@@ -59,7 +59,9 @@ module.exports = {
     const key = String(threadID || "");
 
     if (!threadID || !senderID) {
-      return message.reply("❌ Invalid group or sender information.");
+      return message.reply(
+        "❌ Invalid group or sender information."
+      );
     }
 
     if (event.isGroup === false) {
@@ -80,45 +82,76 @@ module.exports = {
       try {
         threadInfo = await api.getThreadInfo(threadID);
       } catch (err) {
-        console.error("[attack] Thread info error:", err?.message);
-        return message.reply("❌ Hindi makuha ang group information.");
+        console.error(
+          "[attack] Thread info error:",
+          err?.stack || err
+        );
+
+        return message.reply(
+          "❌ Hindi makuha ang group information. Check bot permissions."
+        );
       }
 
       const participants = getParticipants(threadInfo);
 
       if (participants.length <= 2) {
-        return message.reply("❌ Group chats only.");
+        return message.reply(
+          "❌ Kailangan ng group chat na may higit sa dalawang miyembro."
+        );
       }
 
       let changed = 0;
       let failed = 0;
 
-      for (const userID of participants) {
+      for (let i = 0; i < participants.length; i++) {
+        const userID = participants[i];
+
         try {
-          await api.changeNickname(nickname, threadID, userID);
+          await api.changeNickname(
+            nickname,
+            threadID,
+            userID
+          );
+
           changed++;
-
-          const randomLine =
-            trollLines[Math.floor(Math.random() * trollLines.length)];
-
-          await sleep(DELAY);
-          await api.sendMessage(randomLine, threadID);
         } catch (err) {
           failed++;
 
           console.error(
-            `[attack] Failed for ${userID}:`,
-            err?.message || "Unknown error"
+            `[attack] Nickname change failed for ${userID}:`,
+            err?.message || err
           );
         }
 
-        if (changed + failed < participants.length) {
+        try {
+          const randomLine =
+            trollLines[
+              Math.floor(Math.random() * trollLines.length)
+            ];
+
+          await api.sendMessage(randomLine, threadID);
+        } catch (err) {
+          console.error(
+            "[attack] Message send failed:",
+            err?.message || err
+          );
+        }
+
+        if (i < participants.length - 1) {
           await sleep(DELAY);
         }
       }
 
-      console.log(
-        `[attack] Finished in thread ${threadID}. Changed: ${changed}, failed: ${failed}.`
+      return;
+      );
+    } catch (err) {
+      console.error(
+        "[attack] Unexpected error:",
+        err?.stack || err
+      );
+
+      return message.reply(
+        "❌ May naganap na error sa attack command. Check bot logs."
       );
     } finally {
       runningThreads.delete(key);
