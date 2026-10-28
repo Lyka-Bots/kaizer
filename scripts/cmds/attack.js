@@ -1,8 +1,7 @@
 const runningThreads = new Set();
 
 const nickname = "Ako Ang Pinaka Malakas Dito👊😂🗑️";
-countdown : 10
-const DELAY = 1000;
+countdown : 5
 
 const trollLines = [
   "Hoy mga aso gising 😂👊 bakit tahimik ang GC akala mo may lamay dito HAHAHAHA 😂👌",
