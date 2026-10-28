@@ -1,6 +1,8 @@
-const runningThreads = new Set();
 
-const DELAY = 2000;
+const runningThreads = new Set();
+const stopRequests = new Set();
+
+const DELAY = 500;
 const nickname = "Ako Ang Pinaka Malakas Dito👊😂🗑️";
 
 const trollLines = [
@@ -41,36 +43,45 @@ function getParticipants(threadInfo) {
 module.exports = {
   config: {
     name: "attack",
-    version: "1.2.1",
+    version: "1.3.0",
     author: "Kaizer",
     countDown: 5,
     role: 1,
     description: {
-      en: "Change group nicknames and send random troll messages."
+      en: "Set group nicknames and send random messages."
     },
     category: "box chat",
     guide: {
-      en: "{pn}"
+      en: "{pn} — Start\nType done in the group to stop."
     }
+  },
+
+  onChat: async function ({ event }) {
+    const threadID = String(event.threadID || "");
+    const body = String(event.body || "").trim().toLowerCase();
+
+    if (!threadID || body !== "done") return;
+    if (!runningThreads.has(threadID)) return;
+
+    stopRequests.add(threadID);
   },
 
   onStart: async function ({ api, event, message }) {
     const { threadID, senderID } = event;
     const key = String(threadID || "");
 
-    if (!threadID || !senderID) {
-      return message.reply("❌ Invalid group or sender information.");
-    }
+    if (!threadID || !senderID) return;
 
     if (event.isGroup === false) {
-      return message.reply("❌ Group chats only.");
+      return message.reply("Group chats only.");
     }
 
     if (runningThreads.has(key)) {
-      return message.reply("⏳ May tumatakbo nang proseso sa group na ito.");
+      return message.reply("May tumatakbo nang attack sa GC na ito.");
     }
 
     runningThreads.add(key);
+    stopRequests.delete(key);
 
     try {
       let threadInfo;
@@ -78,44 +89,58 @@ module.exports = {
       try {
         threadInfo = await api.getThreadInfo(threadID);
       } catch (err) {
-        console.error("[attack] Thread info error:", err?.stack || err);
-        return message.reply("❌ Hindi makuha ang group information. Check bot permissions.");
+        console.error("[attack] Get thread info failed:", err);
+        return message.reply("Hindi makuha ang group information. Check bot permissions.");
       }
 
       const participants = getParticipants(threadInfo);
 
       if (participants.length <= 2) {
-        return message.reply("❌ Kailangan ng group chat na may higit sa dalawang miyembro.");
+        return message.reply("Kailangan ng group chat na may higit sa dalawang miyembro.");
       }
 
-      for (let i = 0; i < participants.length; i++) {
-        const userID = participants[i];
+      // PHASE 1: Unahin ang pag-set ng nicknames.
+      for (const userID of participants) {
+        if (stopRequests.has(key)) break;
 
         try {
           await api.changeNickname(nickname, threadID, userID);
         } catch (err) {
-          console.error(`[attack] Nickname change failed for ${userID}:`, err?.message || err);
+          console.error(
+            `[attack] Nickname failed for ${userID}:`,
+            err?.message || err
+          );
         }
 
-        try {
-          const randomLine = trollLines[Math.floor(Math.random() * trollLines.length)];
-          await api.sendMessage(randomLine, threadID);
-        } catch (err) {
-          console.error("[attack] Message send failed:", err?.message || err);
-        }
-
-        if (i < participants.length - 1) {
-          await sleep(DELAY);
-        }
+        if (stopRequests.has(key)) break;
+        await sleep(DELAY);
       }
 
-      // Walang completion/progress message sa group.
+      // PHASE 2: Troll messages pagkatapos ng nickname attempts.
+      for (let i = 0; i < participants.length; i++) {
+        if (stopRequests.has(key)) break;
+
+        const randomLine =
+          trollLines[Math.floor(Math.random() * trollLines.length)];
+
+        try {
+          await api.sendMessage(randomLine, threadID);
+        } catch (err) {
+          console.error("[attack] Send message failed:", err?.message || err);
+        }
+
+        if (stopRequests.has(key)) break;
+        if (i < participants.length - 1) await sleep(DELAY);
+      }
+
+      // Walang completion message sa GC.
       return;
     } catch (err) {
       console.error("[attack] Unexpected error:", err?.stack || err);
-      return message.reply("❌ May naganap na error sa attack command. Check bot logs.");
+      return message.reply("May error sa attack. Tingnan ang bot console.");
     } finally {
       runningThreads.delete(key);
+      stopRequests.delete(key);
     }
   }
 };
