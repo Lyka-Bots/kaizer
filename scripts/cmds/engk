@@ -1,0 +1,112 @@
+const REPLIES = [
+  "HOY, ANO NA NAMAN?! 😭💢",
+  "BAKIT PARANG MAY PROBLEMA NA NAMAN?! 💀",
+  "KALMA LANG, GC LANG ITO! 😭",
+  "MAY SASABIHIN KA BA O PARAMDAM LANG?!",
+  "ENGK HAS ENTERED THE CHAT 💥",
+  "TEKA LANG, ANO NA NAMAN ANG ISSUE?! 😭",
+  "HINDI ITO PRESS CONFERENCE! 💀",
+  "HOY, ISA-ISA LANG TAYO! 💢"
+];
+
+const COOLDOWN_MS = 3000;
+const MAX_REPLIES = 5;
+
+const activeThreads = new Set();
+const lastReplies = new Map();
+const replyCounts = new Map();
+
+module.exports = {
+  config: {
+    name: "engk",
+    version: "1.0.0",
+    author: "Kaizer",
+    countDown: 3,
+    role: 1,
+    shortDescription: "ENGK troll mode",
+    longDescription: "Playful random replies in group chats",
+    category: "fun",
+    guide: {
+      en: "{pn}"
+    }
+  },
+
+  onStart: async function ({ event, message }) {
+    const threadID = event.threadID;
+
+    activeThreads.add(threadID);
+    lastReplies.delete(threadID);
+    replyCounts.set(threadID, 0);
+
+    return message.reply(
+      "💥 ENGK MODE ACTIVATED!\n" +
+      "Handa na ang ENGK! 😭💢\n" +
+      "Type done para mag-stop."
+    );
+  },
+
+  onChat: async function ({ api, event }) {
+    const threadID = event.threadID;
+    const senderID = event.senderID;
+    const body = event.body || "";
+
+    if (!activeThreads.has(threadID)) return;
+    if (!body.trim()) return;
+
+    // Ignore bot messages.
+    if (
+      String(senderID) ===
+      String(api.getCurrentUserID())
+    ) return;
+
+    // The word "done" stops the mode.
+    if (body.trim().toLowerCase() === "done") {
+      activeThreads.delete(threadID);
+      lastReplies.delete(threadID);
+      replyCounts.delete(threadID);
+
+      return api.sendMessage(
+        "🛑 ENGK MODE OFF!",
+        threadID
+      );
+    }
+
+    const now = Date.now();
+    const lastTime = lastReplies.get(threadID) || 0;
+
+    if (now - lastTime < COOLDOWN_MS) return;
+
+    const count = replyCounts.get(threadID) || 0;
+
+    if (count >= MAX_REPLIES) {
+      activeThreads.delete(threadID);
+      lastReplies.delete(threadID);
+      replyCounts.delete(threadID);
+      return;
+    }
+
+    const reply =
+      REPLIES[Math.floor(Math.random() * REPLIES.length)];
+
+    lastReplies.set(threadID, now);
+    replyCounts.set(threadID, count + 1);
+
+    try {
+      await api.sendMessage(
+        {
+          body: `💢 ENGK: ${reply}`,
+          replyToMessageID: event.messageID
+        },
+        threadID
+      );
+
+      if (count + 1 >= MAX_REPLIES) {
+        activeThreads.delete(threadID);
+        lastReplies.delete(threadID);
+        replyCounts.delete(threadID);
+      }
+    } catch (error) {
+      console.error("[ENGK] Error:", error);
+    }
+  }
+};
