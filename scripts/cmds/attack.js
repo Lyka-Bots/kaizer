@@ -1,22 +1,27 @@
 const runningThreads = new Set();
 const threadCooldowns = new Map();
 
-const COOLDOWN_MS = 3000;
-const NICKNAME = "Ako Ang Pinaka Malakas Dito👊😂🗑️";
+const COOLDOWN_MS = 5000;
+const DELAY_MS = 300;
+
+const nickname = "Ako Ang Pinaka Malakas Dito👊😂🗑️";
 
 const trollLines = [
   "Hoy mga aso gising 😂👊 bakit tahimik ang GC HAHAHAHA 😂👌",
   "Mga ulol nasaan na kayo HAHAHAHA ang iingay niyo kanina 😂👊",
   "HOY MGA TAMBAY GUMALAW-GALAW NAMAN KAYO 😂👊",
-  "Gising mga idol HAHAHAHA tulog pa rin ba kayo 😂👌👊",
+  "Gising mga idol HAHAHAHA 😂👌👊",
   "ANO NA MGA BOSSING HAHAHAHA bakit tahimik ang GC 😂👌",
-  "Hoy GC CHECK HAHAHAHA sino ang buhay pa diyan 😂👊",
-  "Mga idol paramdam naman kayo kahit emoji lang 😂👌",
-  "HOY MGA ALAMAT GISING NA HAHAHAHA 😂👊"
+  "HOY GC CHECK 😂👊 paramdam naman kayo!",
+  "Mga idol buhay pa ba kayo? HAHAHAHA 😂",
+  "Hoy mga alamat, magparamdam naman kayo 😂👌",
+  "Mga loko, nasaan ang energy niyo? 😂👊",
+  "HOY ATTENDANCE! Sino ang gising diyan? 😂"
 ];
 
-const sleep = ms =>
-  new Promise(resolve => setTimeout(resolve, ms));
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 function getParticipants(threadInfo) {
   return [
@@ -24,6 +29,7 @@ function getParticipants(threadInfo) {
       (threadInfo?.participantIDs || [])
         .filter(id => id != null)
         .map(String)
+        .filter(Boolean)
     )
   ];
 }
@@ -31,12 +37,12 @@ function getParticipants(threadInfo) {
 module.exports = {
   config: {
     name: "attack",
-    version: "1.3.1",
+    version: "1.2.0",
     author: "Kaizer",
     countDown: 5,
     role: 1,
     description: {
-      en: "Send a random group message and update nicknames."
+      en: "Send a random group message."
     },
     category: "box chat",
     guide: {
@@ -44,29 +50,17 @@ module.exports = {
     }
   },
 
-  onStart: async function ({ api, event, message }) {
+  onStart: async function ({ api, event }) {
     const threadID = event.threadID;
     const key = String(threadID || "");
 
-    if (!key || event.isGroup === false) {
-      return message.reply("❌ Group chats only.");
-    }
-
-    if (runningThreads.has(key)) {
-      return message.reply(
-        "⏳ May tumatakbo nang command sa GC na ito."
-      );
-    }
+    if (!key || event.isGroup === false) return;
+    if (runningThreads.has(key)) return;
 
     const now = Date.now();
     const lastUsed = threadCooldowns.get(key) || 0;
-    const remaining = COOLDOWN_MS - (now - lastUsed);
 
-    if (remaining > 0) {
-      return message.reply(
-        `⏳ Wait ${Math.ceil(remaining / 1000)} seconds bago ulit.`
-      );
-    }
+    if (now - lastUsed < COOLDOWN_MS) return;
 
     runningThreads.add(key);
     threadCooldowns.set(key, now);
@@ -78,67 +72,53 @@ module.exports = {
         threadInfo = await api.getThreadInfo(threadID);
       } catch (err) {
         console.error("[attack] Thread info error:", err);
-        return message.reply(
-          "❌ Hindi makuha ang group information."
-        );
+        return;
       }
 
       const participants = getParticipants(threadInfo);
 
       if (!participants.length) {
-        return message.reply(
-          "❌ Walang nakuhang group members."
-        );
+        console.error("[attack] No participants found.");
+        return;
       }
 
-      let changed = 0;
-      let failed = 0;
-
+      // Update nicknames sequentially.
       for (const userID of participants) {
         try {
           await api.changeNickname(
-            NICKNAME,
+            nickname,
             threadID,
             userID
           );
-          changed++;
         } catch (err) {
-          failed++;
           console.error(
-            `[attack] Nickname error for ${userID}:`,
-            err
+            "[attack] Nickname error:",
+            err?.message || err
           );
           break;
         }
 
-        await sleep(300);
+        await sleep(DELAY_MS);
       }
 
+      // Send one random message without a completion notification.
       const randomLine =
-        trollLines[
-          Math.floor(Math.random() * trollLines.length)
-        ];
+        trollLines[Math.floor(Math.random() * trollLines.length)];
 
       try {
         await api.sendMessage(randomLine, threadID);
       } catch (err) {
-        console.error("[attack] Send message error:", err);
-
-        return message.reply(
-          `⚠️ Nicknames changed: ${changed}. Failed: ${failed}. Hindi naipadala ang chat.`
+        console.error(
+          "[attack] Message error:",
+          err?.message || err
         );
       }
 
-      return;
-      );
-
     } catch (err) {
-      console.error("[attack] Unexpected error:", err);
-
-      return message.reply(
-        "❌ May error sa attack command. Tingnan ang bot console."
+      console.error(
+        "[attack] Unexpected error:",
+        err?.message || err
       );
-
     } finally {
       runningThreads.delete(key);
     }
