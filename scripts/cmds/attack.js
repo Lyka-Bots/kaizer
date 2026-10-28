@@ -1,8 +1,8 @@
 const runningThreads = new Set();
 const threadCooldowns = new Map();
 
-const COOLDOWN_MS = 5000;
-const DELAY_MS = 300;
+const COOLDOWN_MS = 3000;
+const DELAY_MS = 1000;
 
 const nickname = "Ako Ang Pinaka Malakas Dito👊😂🗑️";
 
