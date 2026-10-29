@@ -1,4 +1,3 @@
-
 const OpenAI = require("openai");
 const config = require("../../config.json");
 
@@ -7,11 +6,44 @@ const threadQueues = new Map();
 const participantLabels = new Map();
 
 const MAX_HISTORY_MESSAGES = 12;
+let openaiClient;
+
+function sendMessage(api, message, threadID, replyToMessageID) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+
+    const finish = (error, info) => {
+      if (settled) return;
+      settled = true;
+
+      if (error) reject(error);
+      else resolve(info);
+    };
+
+    try {
+      const result = api.sendMessage(
+        message,
+        threadID,
+        (error, info) => finish(error, info),
+        replyToMessageID
+      );
+
+      if (result && typeof result.then === "function") {
+        result.then(
+          info => finish(null, info),
+          error => finish(error)
+        );
+      }
+    } catch (error) {
+      finish(error);
+    }
+  });
+}
 
 module.exports = {
   config: {
     name: "aiauto",
-    version: "1.0.0",
+    version: "1.0.1",
     author: "Kaizer",
     countDown: 0,
     role: 0,
@@ -22,33 +54,51 @@ module.exports = {
   },
 
   onStart: async function ({ api, event }) {
-    return api.sendMessage(
-      "🤖 Auto AI is loaded! I can reply automatically to incoming messages.",
-      event.threadID,
-      event.messageID
-    );
+    if (!event || !event.threadID) return;
+
+    try {
+      await sendMessage(
+        api,
+        "🤖 Auto AI command is loaded. Automatic replies work only if Kaizer supports this file's onChat event.",
+        event.threadID,
+        event.messageID
+      );
+    } catch (error) {
+      console.error(
+        "[aiauto] Could not send startup confirmation:",
+        error?.message || error
+      );
+    }
   },
 
   onChat: async function ({ api, event }) {
     if (!event || !event.threadID || !event.messageID) return;
 
     const body =
-      typeof event.body === "string" ? event.body.trim() : "";
+      typeof event.body === "string"
+        ? event.body.trim()
+        : "";
 
     if (!body) return;
 
-    // Ignore the bot's own messages.
     try {
-      if (
-        String(event.senderID) ===
-        String(api.getCurrentUserID())
-      ) {
-        return;
+      if (typeof api.getCurrentUserID === "function") {
+        const botID = api.getCurrentUserID();
+
+        if (
+          botID &&
+          String(event.senderID) === String(botID)
+        ) {
+          return;
+        }
       }
     } catch (_) {}
 
-    // Do not reply to commands such as /help or /ai.
-    const prefix = config.prefix || "/";
+    const prefix =
+      typeof config.prefix === "string" && config.prefix.length
+        ? config.prefix
+        : "/";
+
     if (body.startsWith(prefix)) return;
 
     if (!process.env.OPENAI_API_KEY) {
@@ -61,8 +111,6 @@ module.exports = {
     const threadID = String(event.threadID);
     const senderID = String(event.senderID || "unknown");
 
-    // Use local participant labels instead of sending Facebook IDs
-    // to the AI service.
     if (!participantLabels.has(threadID)) {
       participantLabels.set(threadID, new Map());
     }
@@ -81,7 +129,6 @@ module.exports = {
       content: `${labels.get(senderID)}: ${body}`
     };
 
-    // Keep replies in order within each chat.
     const previous =
       threadQueues.get(threadID) || Promise.resolve();
 
@@ -92,29 +139,35 @@ module.exports = {
           conversationMemory.get(threadID) || [];
 
         try {
-          const client = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY
-          });
+          if (!openaiClient) {
+            openaiClient = new OpenAI({
+              apiKey: process.env.OPENAI_API_KEY
+            });
+          }
 
-          const response = await client.responses.create({
-            model: "gpt-4.1-mini",
+          const response =
+            await openaiClient.responses.create({
+              model: "gpt-4.1-mini",
 
-            instructions:
-              "You are Kaizer's funny and makulit Filipino AI " +
-              "chatbot on Messenger. Speak naturally in Taglish. " +
-              "Be witty, playful, friendly, and conversational. " +
-              "Keep replies fairly short and respond to the latest " +
-              "message using the conversation history. In group " +
-              "chats, pay attention to which participant said what. " +
-              "Never claim to be human. Avoid threats, serious " +
-              "harassment, and unsafe advice.",
+              instructions:
+                "You are Kaizer's funny and makulit Filipino AI chatbot on Messenger. " +
+                "Speak naturally in Taglish. Be witty, playful, friendly, and conversational. " +
+                "Keep replies fairly short and respond to the latest message using the conversation history. " +
+                "In group chats, pay attention to which participant said what. " +
+                "Never claim to be human. Avoid threats, serious harassment, and unsafe advice.",
 
-            input: [...history, userMessage],
-            max_output_tokens: 180
-          });
+              input: [...history, userMessage],
+              max_output_tokens: 180
+            });
 
           const answer = response.output_text?.trim();
-          if (!answer) return;
+
+          if (!answer) {
+            console.warn(
+              "[aiauto] OpenAI returned an empty response."
+            );
+            return;
+          }
 
           const updatedHistory = [
             ...history,
@@ -125,13 +178,13 @@ module.exports = {
             }
           ];
 
-          // Remember the latest six user/assistant exchanges.
           conversationMemory.set(
             threadID,
             updatedHistory.slice(-MAX_HISTORY_MESSAGES)
           );
 
-          await api.sendMessage(
+          await sendMessage(
+            api,
             answer,
             event.threadID,
             event.messageID
@@ -155,4 +208,3 @@ module.exports = {
     }
   }
 };
-  
