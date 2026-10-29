@@ -1,54 +1,42 @@
-/**
- * Auto-copy reactions made by bot admins.
- */
+
 const config = require("../../config.json");
 
 module.exports = {
   config: {
-    name: "autoreactReaction",
+    name: "autoreactadmin",
     version: "1.0.0",
     author: "Kaizer",
-    description: "Copies reactions made by bot admins",
+    countDown: 0,
+    role: 0,
+    description: {
+      en: "Automatically reacts 😆 to bot admin messages"
+    },
     category: "events"
   },
 
-  onStart: async function ({ api, event }) {
-    try {
-      if (!event || event.type !== "message_reaction") return;
+  onStart: async function () {},
 
-      const adminIDs = Array.isArray(config.adminBot)
-        ? config.adminBot.map(String)
-        : [];
+  onChat: async function ({ api, event }) {
+    if (!event || !event.body || !event.messageID) return;
 
-      const reactorID = String(
-        event.userID || event.senderID || ""
-      );
+    const adminIDs = Array.isArray(config.adminBot)
+      ? config.adminBot.map(String)
+      : [];
 
-      if (!reactorID || !adminIDs.includes(reactorID)) return;
+    const senderID = String(event.senderID || "");
 
-      const { messageID, threadID, reaction } = event;
+    // Only bot admins can trigger the auto-reaction.
+    if (!senderID || !adminIDs.includes(senderID)) return;
 
-      if (
-        !messageID ||
-        !threadID ||
-        typeof reaction !== "string" ||
-        !reaction.trim()
-      ) return;
-
-      api.setMessageReaction(
-        reaction,
-        { messageID, threadID },
-        err => {
-          if (err) {
-            console.error(
-              "[autoreactReaction] Reaction failed:",
-              err
-            );
-          }
+    api.setMessageReaction(
+      "😆",
+      event.messageID,
+      err => {
+        if (err) {
+          console.error("[autoreactadmin] Reaction failed:", err);
         }
-      );
-    } catch (err) {
-      console.error("[autoreactReaction] Error:", err);
-    }
+      },
+      true
+    );
   }
 };
