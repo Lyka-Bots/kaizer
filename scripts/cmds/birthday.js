@@ -1,6 +1,6 @@
 module.exports = {
   config: {
-    name: "birthday",
+    name: "Kaizer",
     version: "1.0.3",
     author: "Siegfried Samá",
     countDown: 1,
@@ -25,7 +25,7 @@ module.exports = {
     ];
     if (!KEYWORDS.some(k => msg.startsWith(k) || msg.includes(k))) return;
 
-    const text = "🎂 HAPPY BIRTHDAY from Siegfried Samá 🥐🥐🥐\nand your Family — may you have the best day ever! 🎉🎈";
+    const text = "🎂 HAPPY BIRTHDAY from Kaizer \nand your Family — The star must have celebrate the night you arrived, knowing the world have gained another light... And Perhaps the sky have been a little brighter ever since. 🎉🎈";
     return api.sendMessage(text, threadID, messageID);
   }
 };
