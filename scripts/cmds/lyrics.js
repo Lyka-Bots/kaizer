@@ -1,14 +1,4 @@
-
 const axios = require("axios");
-
-function normalizeTitle(text) {
-  return String(text || "")
-    .toLowerCase()
-    .replace(/['’]/g, "")
-    .replace(/[^a-z0-9 ]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
 
 module.exports = {
   config: {
@@ -18,12 +8,8 @@ module.exports = {
     countDown: 5,
     role: 0,
     category: "music",
-    description: {
-      en: "Search for an exact song match."
-    },
-    guide: {
-      en: "{pn} <song title>"
-    }
+    description: { en: "Search song information by title and artist." },
+    guide: { en: "{pn} <song title> [by artist]" }
   },
 
   onStart: async function ({ api, event, args }) {
@@ -32,7 +18,7 @@ module.exports = {
 
     if (!query) {
       return api.sendMessage(
-        "🎵 Please enter a song title.\nExample: /lyrics Hangin",
+        "🎵 SONG SEARCH\n\nUsage: /lyrics <song title> [by artist]\nExample: /lyrics Kung Wala Ka by Hale\nExample: /lyrics Perfect by Ed Sheeran",
         threadID,
         messageID
       );
@@ -41,62 +27,51 @@ module.exports = {
     api.setMessageReaction("⏳", messageID, () => {}, true);
 
     try {
-      const res = await axios.get(
+      const response = await axios.get(
         "https://www.smfahim.xyz/ai/lyrics/v1",
         {
           params: { prompt: query },
-          timeout: 15000
+          timeout: 20000,
+          headers: { Accept: "application/json" }
         }
       );
 
-      const data = res.data;
+      const data = response.data;
+      const song = data && data.lyrics;
 
-      if (!data?.success || !data?.lyrics?.title) {
+      if (!data || data.success !== true || !song || typeof song !== "object") {
         api.setMessageReaction("❌", messageID, () => {}, true);
         return api.sendMessage(
-          "❌ Song not found. Try adding the artist name.",
+          `❌ Walang mahanap na result para sa: ${query}\n\nSubukan ang mas kumpletong title o idagdag ang artist name.`,
           threadID,
           messageID
         );
       }
 
-      const title = data.lyrics.title;
-      const requestedTitle = normalizeTitle(query);
-      const returnedTitle = normalizeTitle(title);
+      const title = song.title || song.name || "Unknown title";
+      const artist = song.artist || song.artists || song.artist_name || song.singer || "Not provided by search API";
+      const album = song.album || song.album_name;
+      const link = song.url || song.link || song.source;
 
-      // Reject results that do not exactly match the requested title.
-      if (requestedTitle !== returnedTitle) {
-        api.setMessageReaction("❌", messageID, () => {}, true);
-        return api.sendMessage(
-          `❌ Wrong song result!\n\n` +
-          `🔎 Search: ${query}\n` +
-          `🎵 Result: ${title}\n\n` +
-          `Please include the artist name for a more accurate search.`,
-          threadID,
-          messageID
-        );
+      // Do not print the API's full lyric text. Show song metadata only.
+      let message = `🎵 SONG RESULT\n\nTitle: ${title}\nArtist: ${Array.isArray(artist) ? artist.join(", ") : artist}`;
+      if (album) message += `\nAlbum: ${album}`;
+      if (link && typeof link === "string" && /^https?:\/\//i.test(link)) {
+        message += `\n\nListen / view: ${link}`;
       }
+      message += "\n\nIf the result is not the song you meant, try adding the artist name to your search.";
 
       api.setMessageReaction("✅", messageID, () => {}, true);
-
-      return api.sendMessage(
-        `🎵 Exact song match found!\n\n` +
-        `Title: ${title}\n\n` +
-        `Song lyrics are not displayed in full here.`,
-        threadID,
-        messageID
-      );
-
-    } catch (err) {
-      console.error("[LYRICS ERROR]", err);
-
+      return api.sendMessage(message, threadID, messageID);
+    } catch (error) {
+      console.error("[LYRICS COMMAND ERROR]", error.response?.data || error.message || error);
       api.setMessageReaction("❌", messageID, () => {}, true);
-
       return api.sendMessage(
-        "❌ Lyrics search failed. Please try again later.",
+        "❌ Hindi ma-access ang song search ngayon. Pakisubukan ulit mamaya.",
         threadID,
         messageID
       );
     }
   }
 };
+            
