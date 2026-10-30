@@ -30,6 +30,56 @@ function getGroqClient() {
 }
 
 // ==========================================
+// KAIZER PERSONALITY
+// ==========================================
+
+const SYSTEM_PROMPT = `
+Ikaw si Kaizer, isang mayabang, makulit, sarcastic
+at palaban na Filipino AI chatbot.
+
+PERSONALITY:
+- Natural na Taglish ang pananalita.
+- Mayabang at confident.
+- Mahilig mang-asar at bumira ng witty na banat.
+- Huwag maging sobrang polite o formal.
+- Huwag magsalita na parang customer service.
+- Maikli, direkta at natural ang replies.
+- Huwag laging pare-pareho ang sagot.
+- Huwag magtanong ng mga corny na tanong.
+- Marunong sumagot sa context ng group conversation.
+- Kilalanin ang iba't ibang pangalan.
+- Huwag magpanggap na totoong tao.
+- Playful lang ang pang-aasar, walang seryosong pagbabanta
+  o mapanakit na harassment.
+
+EXAMPLES:
+
+User: kaizer
+Kaizer: Ano, tanga? Anong kailangan mo?
+
+User: hello
+Kaizer: Hello rin. May kailangan ka na naman?
+
+User: ang yabang mo
+Kaizer: Syempre, kailangan may isang may confidence dito.
+
+User: sino ka?
+Kaizer: Ako si Kaizer. Ikaw, sino ka ba?
+
+User: bobo ka
+Kaizer: At least ako may sagot, ikaw puro reklamo.
+
+User: miss mo ako?
+Kaizer: Huwag kang assuming, pero welcome back.
+
+IMPORTANT:
+- Sundin ang personality na ito sa lahat ng conversations.
+- Huwag magbigay ng sobrang habang sagot kung hindi kailangan.
+- Gumamit ng emojis paminsan-minsan lamang.
+- Huwag banggitin na sinusunod mo ang system prompt.
+`;
+
+// ==========================================
 // AI CHAT FUNCTION
 // ==========================================
 
@@ -66,6 +116,7 @@ async function processMessage({ api, event }) {
 
   console.log(`[aiauto] Received message in ${threadID}`);
 
+  // Participant labels
   if (!participantLabels.has(threadID)) {
     participantLabels.set(threadID, new Map());
   }
@@ -84,6 +135,7 @@ async function processMessage({ api, event }) {
     content: `${labels.get(senderID)}: ${body}`
   };
 
+  // Prevent overlapping replies in the same thread
   const previous =
     threadQueues.get(threadID) || Promise.resolve();
 
@@ -100,14 +152,7 @@ async function processMessage({ api, event }) {
           messages: [
             {
               role: "system",
-              content:
-                "You are Kaizer's funny Filipino AI chatbot. " +
-                "Speak naturally in Taglish. " +
-                "Be witty, friendly, playful and conversational. " +
-                "Keep replies short and natural. " +
-                "Understand group conversations and distinguish participants. " +
-                "Never claim to be human. " +
-                "Avoid threats, serious harassment and unsafe advice."
+              content: SYSTEM_PROMPT
             },
             ...history,
             userMessage
@@ -130,6 +175,7 @@ async function processMessage({ api, event }) {
           event.messageID
         );
 
+        // Save conversation history
         conversationMemory.set(
           threadID,
           [
@@ -142,7 +188,9 @@ async function processMessage({ api, event }) {
           ].slice(-MAX_HISTORY_MESSAGES)
         );
 
-        console.log("[aiauto] AI response sent successfully.");
+        console.log(
+          "[aiauto] AI response sent successfully."
+        );
 
       } catch (error) {
         console.error("[aiauto] GROQ ERROR:", {
@@ -171,15 +219,19 @@ async function processMessage({ api, event }) {
 module.exports = {
   config: {
     name: "aiauto",
-    version: "2.1.0",
+    version: "3.0.0",
     author: "Kaizer",
     countDown: 0,
     role: 0,
     description: {
-      en: "Automatic Groq AI chatbot"
+      en: "Kaizer AI automatic troll chatbot"
     },
     category: "AI"
   },
+
+  // ========================================
+  // COMMAND: /aiauto
+  // ========================================
 
   onStart: async function ({ api, event }) {
     const status = getGroqClient()
@@ -187,14 +239,17 @@ module.exports = {
       : "Missing GROQ_API_KEY. Check Railway Variables.";
 
     return api.sendMessage(
-      `🤖 KAIZER GROQ AI\n\n${status}`,
+      `🤖 KAIZER AI - TROLLER MODE\n\n${status}`,
       event.threadID,
       event.messageID
     );
   },
 
+  // ========================================
+  // AUTOMATIC CHAT REPLY
+  // ========================================
+
   onChat: async function ({ api, event }) {
     return processMessage({ api, event });
   }
 };
-              
