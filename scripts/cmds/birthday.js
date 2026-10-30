@@ -1,8 +1,8 @@
 module.exports = {
   config: {
-    name: "Kaizer",
+    name: "birthday",
     version: "1.0.3",
-    author: "Siegfried Samá",
+    author: "Kaizer",
     countDown: 1,
     role: 0,
     description: { en: "Auto replies with a birthday message when birthday keywords are detected" },
