@@ -5,15 +5,15 @@ module.exports = {
     author: "Kaizer",
     countDown: 10,
     role: 0,
-    shortDescription: "Message the Admin GC",
-    longDescription: "Send suggestions and reports to the Admin GC.",
+    shortDescription: "Message the Admin",
+    longDescription: "Send suggestions and reports to the admin inbox.",
     category: "utility",
     guide: "{pn} [message]"
   },
 
   onStart: async function ({ api, event, args, message }) {
-    // FIXED ADMIN GC / ANNOUNCEMENT THREAD ID
-    const ADMIN_THREAD_ID = "2349229388914312";
+    // FIXED PERSONAL ADMIN RECIPIENT UID
+    const ADMIN_RECIPIENT_ID = "61569096795926";
 
     const senderID = event.senderID;
     const sourceThreadID = event.threadID;
@@ -35,16 +35,16 @@ module.exports = {
       "📌 Source GC Thread ID: " + sourceThreadID;
 
     try {
-      api.sendMessage(adminMessage, ADMIN_THREAD_ID, (err) => {
+      api.sendMessage(adminMessage, ADMIN_RECIPIENT_ID, (err) => {
         if (err) {
           console.error("[CHATADMIN ERROR]", err);
           return message.reply(
-            "❌ Hindi naipadala ang message sa Admin GC."
+            "❌ Hindi naipadala ang message sa personal inbox ng admin."
           );
         }
 
         return message.reply(
-          "✅ Naipadala na ang message mo sa Admin GC!\n\nSalamat sa feedback."
+          "✅ Naipadala na ang message mo sa admin!\n\nSalamat sa feedback."
         );
       });
     } catch (err) {
@@ -55,3 +55,4 @@ module.exports = {
     }
   }
 };
+        
