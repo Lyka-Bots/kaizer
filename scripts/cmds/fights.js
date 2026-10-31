@@ -1,485 +1,550 @@
-const { createCanvas, loadImage } = require("canvas");
-const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
+const axios = require("axios");
+const { createCanvas, loadImage } = require("canvas");
+const GIFEncoder = require("gifencoder");
 
-const pending = new Map();
-const active = new Set();
-const ACCEPT_WINDOW = 60_000;
+const pendingFights = new Map();
+const W = 900;
+const H = 500;
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+function roundedRect(ctx, x, y, w, h, r, fill) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x, y + h, x, y + h, r);
+  ctx.arcTo(x, y, x + w, y);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
 }
 
-function getTargetId(event) {
-  const ids = Object.keys(event.mentions || {});
-
-  if (event.messageReply?.senderID) {
-    return String(event.messageReply.senderID);
-  }
-
-  return ids.length ? String(ids[0]) : null;
-}
-
-async function getName(api, id) {
+async function getUserName(api, id) {
   try {
     const info = await api.getUserInfo(id);
-    return info?.[id]?.name || `Player ${id}`;
+    return info?.[id]?.name || `Player ${String(id).slice(-4)}`;
   } catch {
-    return `Player ${id}`;
+    return `Player ${String(id).slice(-4)}`;
   }
 }
 
 async function getAvatar(id) {
-  const url =
-    `https://graph.facebook.com/${encodeURIComponent(id)}/picture?width=256&height=256`;
-
-  const response = await axios.get(url, {
-    responseType: "arraybuffer",
-    timeout: 10000
-  });
-
-  return loadImage(Buffer.from(response.data));
+  try {
+    const url =
+      `https://graph.facebook.com/${encodeURIComponent(id)}/picture?type=large&width=256&height=256`;
+    const response = await axios.get(url, {
+      responseType: "arraybuffer",
+      timeout: 10000
+    });
+    return await loadImage(Buffer.from(response.data));
+  } catch {
+    return null;
+  }
 }
 
-function drawAvatar(ctx, img, x, y, size) {
+function drawAvatar(ctx, img, x, y, color, name) {
   ctx.save();
   ctx.beginPath();
-  ctx.arc(
-    x + size / 2,
-    y + size / 2,
-    size / 2,
-    0,
-    Math.PI * 2
-  );
+  ctx.arc(x + 31, y + 31, 29, 0, Math.PI * 2);
   ctx.clip();
-  ctx.drawImage(img, x, y, size, size);
-  ctx.restore();
 
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 5;
+  ctx.fillStyle = "#172033";
+  ctx.fillRect(x, y, 62, 62);
+
+  if (img) {
+    ctx.drawImage(img, x + 2, y + 2, 58, 58);
+  } else {
+    ctx.fillStyle = color;
+    ctx.font = "bold 28px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(name.charAt(0).toUpperCase(), x + 31, y + 41);
+  }
+
+  ctx.restore();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.arc(
-    x + size / 2,
-    y + size / 2,
-    size / 2,
-    0,
-    Math.PI * 2
-  );
+  ctx.arc(x + 31, y + 31, 30, 0, Math.PI * 2);
   ctx.stroke();
 }
 
-function drawStickman(ctx, x, y, flip, color, pose) {
+function drawSword(ctx, x1, y1, x2, y2, color, width = 5) {
+  ctx.save();
+  ctx.lineCap = "round";
+
+  // Sword blade
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+
+  // Sword guard
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.max(1, Math.hypot(dx, dy));
+  const px = -dy / len;
+  const py = dx / len;
+
+  ctx.strokeStyle = "#ffd45c";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(x1 - px * 8, y1 - py * 8);
+  ctx.lineTo(x1 + px * 8, y1 + py * 8);
+  ctx.stroke();
+
+  // Handle
+  ctx.strokeStyle = "#a66b37";
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x1 - dx / len * 15, y1 - dy / len * 15);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawStickman(ctx, x, y, color, pose, flip = 1, fallen = false) {
   ctx.save();
   ctx.translate(x, y);
-  ctx.scale(flip ? -1 : 1, 1);
-
+  ctx.scale(flip, 1);
   ctx.strokeStyle = color;
-  ctx.lineWidth = 12;
+  ctx.lineWidth = 8;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
 
-  // Head
-  ctx.beginPath();
-  ctx.arc(0, -95, 28, 0, Math.PI * 2);
-  ctx.stroke();
+  if (fallen) {
+    ctx.rotate(-0.85);
+    ctx.beginPath();
+    ctx.arc(0, -15, 15, 0, Math.PI * 2);
+    ctx.stroke();
 
-  // Body
-  ctx.beginPath();
-  ctx.moveTo(0, -65);
-  ctx.lineTo(0, 10);
-  ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, 42);
+    ctx.lineTo(-30, 60);
+    ctx.moveTo(0, 42);
+    ctx.lineTo(28, 60);
+    ctx.moveTo(0, 15);
+    ctx.lineTo(-24, 30);
+    ctx.moveTo(0, 15);
+    ctx.lineTo(23, 27);
+    ctx.stroke();
 
-  // Arms
-  ctx.beginPath();
-  ctx.moveTo(0, -45);
-
-  if (pose === 1) {
-    ctx.lineTo(58, -35);
-    ctx.lineTo(105, -65);
-  } else if (pose === 2) {
-    ctx.lineTo(55, -85);
-    ctx.lineTo(80, -115);
-  } else {
-    ctx.lineTo(48, -10);
-    ctx.lineTo(68, 10);
+    ctx.restore();
+    return;
   }
 
-  ctx.moveTo(0, -45);
+  const lean = pose === "attack" ? -12 : pose === "throw" ? 12 : 0;
 
-  if (pose === 1) {
-    ctx.lineTo(-38, -15);
-    ctx.lineTo(-55, 15);
-  } else if (pose === 2) {
-    ctx.lineTo(-55, -85);
-    ctx.lineTo(-80, -115);
+  ctx.beginPath();
+  ctx.arc(lean, -72, 16, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(lean, -55);
+  ctx.lineTo(lean, -5);
+
+  if (pose === "attack") {
+    ctx.moveTo(lean, -42);
+    ctx.lineTo(lean + 28, -58);
+    ctx.moveTo(lean, -42);
+    ctx.lineTo(lean - 22, -20);
+    ctx.moveTo(lean, -5);
+    ctx.lineTo(lean + 24, 30);
+    ctx.moveTo(lean, -5);
+    ctx.lineTo(lean - 24, 30);
+  } else if (pose === "throw") {
+    ctx.moveTo(lean, -42);
+    ctx.lineTo(lean + 28, -20);
+    ctx.moveTo(lean, -42);
+    ctx.lineTo(lean - 25, -25);
+    ctx.moveTo(lean, -5);
+    ctx.lineTo(lean + 28, 28);
+    ctx.moveTo(lean, -5);
+    ctx.lineTo(lean - 22, 30);
   } else {
-    ctx.lineTo(-48, -10);
-    ctx.lineTo(-68, 10);
+    ctx.moveTo(lean, -42);
+    ctx.lineTo(lean + 24, -28);
+    ctx.moveTo(lean, -42);
+    ctx.lineTo(lean - 23, -24);
+    ctx.moveTo(lean, -5);
+    ctx.lineTo(lean + 20, 30);
+    ctx.moveTo(lean, -5);
+    ctx.lineTo(lean - 20, 30);
   }
 
   ctx.stroke();
-
-  // Legs
-  ctx.beginPath();
-  ctx.moveTo(0, 10);
-  ctx.lineTo(-35, 65);
-  ctx.lineTo(-42, 100);
-
-  ctx.moveTo(0, 10);
-  ctx.lineTo(35, 65);
-  ctx.lineTo(42, 100);
-  ctx.stroke();
-
   ctx.restore();
 }
 
-function fitName(ctx, name, x, y, maxWidth) {
-  let text = String(name || "Player");
+function drawFrame(ctx, frame, fight, avatars, winner) {
+  const { name1, name2 } = fight;
+  const [avatar1, avatar2] = avatars;
+  const t = frame / 35;
 
-  while (
-    ctx.measureText(text).width > maxWidth &&
-    text.length > 4
-  ) {
-    text = text.slice(0, -2) + "…";
-  }
-
-  ctx.fillText(text, x, y);
-}
-
-async function renderBattle(p1, p2, winnerId, threadID) {
-  const cacheDir = path.join(__dirname, "cache");
-  await fs.ensureDir(cacheDir);
-
-  const out = path.join(
-    cacheDir,
-    `fight-${threadID}-${Date.now()}.png`
-  );
-
-  const canvas = createCanvas(1000, 650);
-  const ctx = canvas.getContext("2d");
-
-  // Arena background
-  const bg = ctx.createLinearGradient(0, 0, 1000, 650);
+  const bg = ctx.createLinearGradient(0, 0, W, H);
   bg.addColorStop(0, "#10152e");
-  bg.addColorStop(0.5, "#31134a");
-  bg.addColorStop(1, "#111827");
+  bg.addColorStop(0.5, "#20204b");
+  bg.addColorStop(1, "#091a2e");
 
   ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, 1000, 650);
+  ctx.fillRect(0, 0, W, H);
 
-  // Arena lights
-  for (let i = 0; i < 12; i++) {
-    ctx.fillStyle = "rgba(255,255,255,0.045)";
-    ctx.beginPath();
-    ctx.arc(
-      50 + i * 85,
-      290 + (i % 2) * 22,
-      36,
-      0,
-      Math.PI * 2
-    );
-    ctx.fill();
-  }
+  // Moonlit arena
+  ctx.fillStyle = "rgba(180,205,255,.14)";
+  ctx.beginPath();
+  ctx.arc(450, 180, 115, 0, Math.PI * 2);
+  ctx.fill();
 
-  ctx.fillStyle = "#ffffff";
-  ctx.textAlign = "center";
-  ctx.font = "bold 44px Arial";
-  ctx.fillText("STICKMAN DUEL", 500, 58);
+  ctx.fillStyle = "#090d1c";
+  ctx.fillRect(0, 355, W, 145);
 
+  ctx.strokeStyle = "#59658e";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, 355);
+  ctx.lineTo(W, 355);
+  ctx.stroke();
+
+  // HP bars
+  roundedRect(ctx, 18, 16, 390, 18, 8, "#262b45");
+  roundedRect(ctx, 492, 16, 390, 18, 8, "#262b45");
+
+  const hp1 = Math.max(0, 1 - t * 1.08);
+  const hp2 = Math.max(0, 1 - Math.max(0, t - 0.1) * 1.2);
+
+  roundedRect(ctx, 20, 18, 386 * hp1, 14, 6, "#ff3158");
+  roundedRect(
+    ctx,
+    494 + 386 * (1 - hp2),
+    18,
+    386 * hp2,
+    14,
+    6,
+    "#20caff"
+  );
+
+  drawAvatar(ctx, avatar1, 20, 42, "#ff3158", name1);
+  drawAvatar(ctx, avatar2, 818, 42, "#20caff", name2);
+
+  ctx.fillStyle = "#fff";
   ctx.font = "bold 20px Arial";
-  ctx.fillStyle = "#ffcf5a";
-  ctx.fillText("SCORE: 30% VS 30%", 500, 92);
+  ctx.textAlign = "left";
+  ctx.fillText(name1.slice(0, 22), 92, 77);
 
-  // Player profile pictures
-  let a1;
-  let a2;
+  ctx.textAlign = "right";
+  ctx.fillText(name2.slice(0, 22), 808, 77);
 
-  try {
-    [a1, a2] = await Promise.all([
-      getAvatar(p1.id),
-      getAvatar(p2.id)
-    ]);
-  } catch (err) {
-    console.error("[fight] Avatar error:", err.message);
+  ctx.textAlign = "center";
+  ctx.font = "bold 25px Arial";
+  ctx.fillStyle = "#ffd34d";
+  ctx.fillText("VS", 450, 65);
+
+  let x1 = 260;
+  let x2 = 640;
+  let pose1 = "idle";
+  let pose2 = "idle";
+  let fallen2 = false;
+
+  // Approach and sword fight
+  if (frame < 8) {
+    x1 += frame * 7;
+    x2 -= frame * 7;
+    pose1 = frame % 3 === 0 ? "attack" : "idle";
+    pose2 = frame % 3 === 1 ? "attack" : "idle";
+  } else if (frame < 19) {
+    x1 = 330 + (frame % 2) * 10;
+    x2 = 570 - (frame % 2) * 10;
+    pose1 = "attack";
+    pose2 = "attack";
+  } else if (frame < 23) {
+    x1 = 360;
+    x2 = 535;
+    pose1 = "attack";
+  } else if (frame < 28) {
+    x1 = 365;
+    x2 = 520 + (frame - 23) * 12;
+    pose1 = "throw";
+  } else {
+    x1 = 365;
+    x2 = 635;
+    fallen2 = true;
   }
 
-  if (a1) drawAvatar(ctx, a1, 175, 115, 105);
-  if (a2) drawAvatar(ctx, a2, 720, 115, 105);
+  // Sword swings
+  if (frame < 23) {
+    const swing = frame < 8 ? frame : frame < 19 ? frame % 5 : frame - 19;
 
-  // Player names
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 22px Arial";
+    drawSword(
+      ctx,
+      x1 + 15,
+      300,
+      x1 + 75 + swing * 2,
+      250 - swing * 3,
+      "#fff4c7"
+    );
 
-  fitName(ctx, p1.name, 227, 246, 250);
-  fitName(ctx, p2.name, 772, 246, 250);
+    if (frame < 19) {
+      drawSword(
+        ctx,
+        x2 - 15,
+        300,
+        x2 - 75 - swing * 2,
+        250 + swing * 2,
+        "#9eeaff"
+      );
+    }
+  } else if (frame < 28) {
+    drawSword(ctx, x1 + 12, 300, x1 + 72, 275, "#fff4c7");
+  }
 
-  // Health bars
-  const hp1 = winnerId === p1.id ? 100 : 0;
-  const hp2 = winnerId === p2.id ? 100 : 0;
+  drawStickman(ctx, x1, 345, "#ff4266", pose1, 1);
+  drawStickman(ctx, x2, 345, "#32d5ff", pose2, -1, fallen2);
 
-  ctx.fillStyle = "#3b3b3b";
-  ctx.fillRect(100, 270, 330, 24);
-  ctx.fillRect(570, 270, 330, 24);
+  // Sword clash sparks
+  if (frame >= 6 && frame <= 19) {
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(450 + Math.sin(frame * 2) * 9, 275, 10 + (frame % 3) * 3, 0, Math.PI * 2);
+    ctx.fill();
 
-  ctx.fillStyle = "#35e07c";
-  ctx.fillRect(100, 270, 330 * hp1 / 100, 24);
-  ctx.fillRect(570, 270, 330 * hp2 / 100, 24);
+    ctx.strokeStyle = "#ffd65c";
+    ctx.lineWidth = 4;
 
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(100, 270, 330, 24);
-  ctx.strokeRect(570, 270, 330, 24);
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4 + frame;
+      ctx.beginPath();
+      ctx.moveTo(450 + Math.cos(a) * 8, 275 + Math.sin(a) * 8);
+      ctx.lineTo(450 + Math.cos(a) * 30, 275 + Math.sin(a) * 30);
+      ctx.stroke();
+    }
+  }
 
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "16px Arial";
-  ctx.fillText(`HP ${hp1}/100`, 265, 314);
-  ctx.fillText(`HP ${hp2}/100`, 735, 314);
+  // KO moment
+  if (frame >= 20 && frame <= 22) {
+    ctx.fillStyle = "#ff304d";
+    ctx.font = "bold italic 64px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("K.O.!", 450, 205);
+  }
 
-  // Stickman fighters
-  drawStickman(
-    ctx, 330, 440, false, "#ff5c75",
-    winnerId === p1.id ? 2 : 1
-  );
+  // Finishing throw after KO
+  if (frame >= 23 && frame <= 27) {
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 22px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("FINISHING THROW!", 450, 145);
 
-  drawStickman(
-    ctx, 670, 440, true, "#5ec8ff",
-    winnerId === p2.id ? 2 : 1
-  );
+    ctx.strokeStyle = "rgba(100,210,255,.8)";
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.arc(545, 290, 75 + frame * 2, Math.PI * 1.1, Math.PI * 1.8);
+    ctx.stroke();
+  }
 
-  // Fatality finish
-  ctx.textAlign = "center";
-  ctx.font = "bold 52px Arial";
-  ctx.fillStyle = "#ffcf5a";
-  ctx.fillText("FATALITY!", 500, 390);
+  // Final screen
+  if (frame >= 28) {
+    ctx.fillStyle = "rgba(0,0,0,.55)";
+    ctx.fillRect(0, 0, W, H);
 
-  ctx.font = "bold 30px Arial";
-  ctx.fillStyle =
-    winnerId === p1.id ? "#ff7a91" : "#70d7ff";
+    ctx.textAlign = "center";
+    ctx.font = "italic bold 70px Arial";
+    ctx.fillStyle = "#ff183d";
+    ctx.fillText("FATALITY!", 450, 220);
 
-  const winnerName =
-    winnerId === p1.id ? p1.name : p2.name;
+    ctx.font = "bold 28px Arial";
+    ctx.fillStyle = "#fff";
+    ctx.fillText(`WINNER: ${winner}`, 450, 270);
 
-  ctx.fillText(`WINNER: ${winnerName}`, 500, 590);
+    ctx.font = "bold 18px Arial";
+    ctx.fillStyle = "#ffd34d";
+    ctx.fillText("SWORD DUEL", 450, 310);
+  }
+}
 
-  ctx.font = "16px Arial";
-  ctx.fillStyle = "#d1d5db";
-  ctx.fillText(
-    "Fantasy stickman battle",
-    500,
-    625
-  );
+async function makeFightGif(fight, outPath) {
+  const avatars = await Promise.all([
+    getAvatar(fight.p1),
+    getAvatar(fight.p2)
+  ]);
 
-  await fs.writeFile(out, canvas.toBuffer("image/png"));
+  const encoder = new GIFEncoder(W, H);
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext("2d");
 
-  return out;
+  const stream = encoder.createReadStream();
+  const fileStream = fs.createWriteStream(outPath);
+
+  const done = new Promise((resolve, reject) => {
+    fileStream.on("finish", resolve);
+    fileStream.on("error", reject);
+    stream.on("error", reject);
+  });
+
+  stream.pipe(fileStream);
+  encoder.start();
+  encoder.setRepeat(0);
+  encoder.setDelay(110);
+  encoder.setQuality(10);
+
+  for (let i = 0; i < 36; i++) {
+    drawFrame(ctx, i, fight, avatars, fight.name1);
+    encoder.addFrame(ctx);
+  }
+
+  encoder.finish();
+  await done;
 }
 
 module.exports = {
   config: {
     name: "fight",
-    version: "1.0.0",
+    aliases: ["duel", "swordfight"],
+    version: "2.0.0",
     author: "Kaizer",
     countDown: 5,
     role: 0,
-    description: {
-      en: "Challenge a group member to a stickman duel."
-    },
+    shortDescription: "Challenge someone to an animated sword duel",
+    longDescription: "Challenge a member, accept the duel, and generate a sword-fight GIF with names and profile pictures.",
     category: "games",
     guide: {
-      en:
-        "{pn} @mention — challenge a player | " +
-        "{pn} accept — accept a challenge | " +
-        "{pn} decline — decline a challenge"
+      en: "{pn} @mention — challenge a player\n{pn} accept — accept the challenge\n{pn} decline — decline the challenge"
     }
   },
 
-  onStart: async function ({ api, event, args, message }) {
-    const threadID = String(event.threadID || "");
-    const senderID = String(event.senderID || "");
-    const sub = String(args[0] || "").toLowerCase();
+  onStart: async function ({ api, event, args }) {
+    const threadID = event.threadID;
+    const senderID = event.senderID;
+    const action = (args[0] || "").toLowerCase();
+    const key = String(threadID);
+    const current = pendingFights.get(key);
 
-    if (!threadID || !senderID) return;
-
-    // ACCEPT CHALLENGE
-    if (sub === "accept" || sub === "a") {
-      const challenge = pending.get(threadID);
-
-      if (!challenge) {
-        return message.reply(
-          "Walang pending na fight challenge sa GC na ito."
-        );
-      }
-
-      if (Date.now() > challenge.expiresAt) {
-        pending.delete(threadID);
-
-        return message.reply(
-          "⌛ Expired na ang challenge. Gumawa ulit ng /fight @mention."
-        );
-      }
-
-      if (senderID !== challenge.targetId) {
-        return message.reply(
-          "❌ Ang mismong hinamon lang ang puwedeng tumanggap nito."
-        );
-      }
-
-      pending.delete(threadID);
-
-      if (active.has(threadID)) {
-        return message.reply(
-          "May duel nang kasalukuyang nagaganap sa GC na ito."
-        );
-      }
-
-      active.add(threadID);
-
-      try {
-        await message.reply(
-          `⚔️ STICKMAN DUEL ACCEPTED!\n\n` +
-          `🔴 ${challenge.challengerName} — SCORE: 30%\n` +
-          `🔵 ${challenge.targetName} — SCORE: 30%\n\n` +
-          `🥊 Simula na ang laban...`
-        );
-
-        // Random winner
-        const winner =
-          Math.random() < 0.5
-            ? challenge.challengerId
-            : challenge.targetId;
-
-        await sleep(1200);
-
-        const out = await renderBattle(
-          {
-            id: challenge.challengerId,
-            name: challenge.challengerName
-          },
-          {
-            id: challenge.targetId,
-            name: challenge.targetName
-          },
-          winner,
-          threadID
-        );
-
-        const winnerName =
-          winner === challenge.challengerId
-            ? challenge.challengerName
-            : challenge.targetName;
-
-        await api.sendMessage(
-          {
-            body:
-              `💥 FATALITY!\n` +
-              `🏆 WINNER: ${winnerName}\n\n` +
-              `🔴 ${challenge.challengerName}: ` +
-              `${winner === challenge.challengerId ? "WIN" : "LOSE"}\n` +
-              `🔵 ${challenge.targetName}: ` +
-              `${winner === challenge.targetId ? "WIN" : "LOSE"}`,
-            attachment: fs.createReadStream(out)
-          },
+    if (["accept", "a"].includes(action)) {
+      if (!current) {
+        return api.sendMessage(
+          "Walang pending sword fight sa chat na ito. Gamitin: /fight @mention",
           threadID,
-          () => fs.remove(out),
           event.messageID
         );
-      } catch (err) {
-        console.error(
-          "[fight] Duel error:",
-          err?.stack || err
-        );
+      }
 
-        return message.reply(
-          "❌ Hindi natuloy ang duel. Check kung installed ang canvas at axios."
+      if (senderID !== current.p2) {
+        return api.sendMessage(
+          "Ang hinamon lang ang puwedeng mag-accept ng fight na ito.",
+          threadID,
+          event.messageID
+        );
+      }
+
+      pendingFights.delete(key);
+
+      if (Math.random() < 0.5) {
+        [current.p1, current.p2] = [current.p2, current.p1];
+        [current.name1, current.name2] = [current.name2, current.name1];
+      }
+
+      api.sendMessage(
+        "⚔️ Accepted! Kinukuha ang profile pictures at names, then generating sword-fight GIF...",
+        threadID,
+        event.messageID
+      );
+
+      const outPath = path.join(
+        __dirname,
+        `fight-${threadID}-${Date.now()}.gif`
+      );
+
+      try {
+        await makeFightGif(current, outPath);
+
+        await new Promise((resolve, reject) => {
+          api.sendMessage(
+            {
+              body:
+                `⚔️ SWORD DUEL\n${current.name1} VS ${current.name2}\n\n` +
+                "K.O. → FINISHING THROW → FATALITY!",
+              attachment: fs.createReadStream(outPath)
+            },
+            threadID,
+            err => (err ? reject(err) : resolve()),
+            event.messageID
+          );
+        });
+      } catch (err) {
+        console.error("[fight] GIF generation failed:", err);
+        api.sendMessage(
+          "Hindi nagawa ang GIF. Check kung installed ang canvas, gifencoder, axios, at fs-extra.",
+          threadID,
+          event.messageID
         );
       } finally {
-        active.delete(threadID);
+        fs.remove(outPath).catch(() => {});
       }
 
       return;
     }
 
-    // DECLINE CHALLENGE
-    if (sub === "decline" || sub === "d") {
-      const challenge = pending.get(threadID);
-
-      if (!challenge) {
-        return message.reply("Walang pending na challenge.");
+    if (["decline", "d"].includes(action)) {
+      if (!current) {
+        return api.sendMessage("Walang pending challenge.", threadID, event.messageID);
       }
 
-      if (senderID !== challenge.targetId) {
-        return message.reply(
-          "Ang hinamon lang ang puwedeng tumanggi."
+      if (senderID !== current.p2) {
+        return api.sendMessage(
+          "Ang hinamon lang ang puwedeng mag-decline.",
+          threadID,
+          event.messageID
         );
       }
 
-      pending.delete(threadID);
+      pendingFights.delete(key);
+      return api.sendMessage("Challenge declined. ⚔️", threadID, event.messageID);
+    }
 
-      return message.reply(
-        `🚫 Tinanggihan ni ${challenge.targetName} ` +
-        `ang hamon ni ${challenge.challengerName}.`
+    const mentioned = Object.keys(event.mentions || {});
+    const targetID = mentioned.find(id => id !== senderID);
+
+    if (!targetID) {
+      return api.sendMessage(
+        "Gamitin: /fight @mention\nPag may challenge na, ang hinamon ay mag-type ng /fight accept.",
+        threadID,
+        event.messageID
       );
     }
 
-    // CREATE CHALLENGE
-    const targetId = getTargetId(event);
-
-    if (!targetId) {
-      return message.reply("Gamitin: /fight @mention");
-    }
-
-    if (targetId === senderID) {
-      return message.reply(
-        "Hindi mo puwedeng hamunin ang sarili mo."
+    if (pendingFights.has(key)) {
+      return api.sendMessage(
+        "May pending fight na sa chat na ito. I-accept o i-decline muna.",
+        threadID,
+        event.messageID
       );
     }
 
-    if (active.has(threadID)) {
-      return message.reply(
-        "May duel nang kasalukuyang nagaganap sa GC na ito."
-      );
+    if (targetID === senderID) {
+      return api.sendMessage("Hindi puwedeng hamunin ang sarili mo. 😅", threadID, event.messageID);
     }
 
-    if (pending.has(threadID)) {
-      return message.reply(
-        "May pending challenge na sa GC. I-accept o i-decline muna."
-      );
-    }
-
-    const [challengerName, targetName] = await Promise.all([
-      getName(api, senderID),
-      getName(api, targetId)
+    const [name1, name2] = await Promise.all([
+      getUserName(api, senderID),
+      getUserName(api, targetID)
     ]);
 
-    pending.set(threadID, {
-      challengerId: senderID,
-      targetId,
-      challengerName,
-      targetName,
-      expiresAt: Date.now() + ACCEPT_WINDOW
+    pendingFights.set(key, {
+      p1: senderID,
+      p2: targetID,
+      name1,
+      name2,
+      createdAt: Date.now()
     });
 
-    setTimeout(() => {
-      const current = pending.get(threadID);
-
-      if (
-        current &&
-        current.challengerId === senderID &&
-        current.targetId === targetId
-      ) {
-        pending.delete(threadID);
-      }
-    }, ACCEPT_WINDOW).unref?.();
-
-    return message.reply(
-      `⚔️ STICKMAN DUEL CHALLENGE!\n\n` +
-      `🔴 Challenger: ${challengerName} — SCORE: 30%\n` +
-      `🔵 Opponent: ${targetName} — SCORE: 30%\n\n` +
-      `${targetName}, tatanggapin mo ba ang hamon?\n\n` +
-      `✅ Accept: /fight accept\n` +
-      `🚫 Decline: /fight decline\n\n` +
-      `⏳ May 60 seconds para sumagot!`
+    return api.sendMessage(
+      `⚔️ SWORD FIGHT CHALLENGE!\n\n${name1} challenges ${name2}!\n\n` +
+      `${name2}, type /fight accept to start or /fight decline to refuse.\n\n` +
+      "Both profile pictures and names will appear in the fight GIF.",
+      threadID,
+      event.messageID
     );
   }
 };
