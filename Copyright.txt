@@ -1,16 +1,16 @@
-@author Siegfried Samá
+@author Kaizer
 ! Original source by NTKhang: https://github.com/ntkhang03/Goat-Bot-V2
-! Updated and maintained by Siegfried Samá
+! Updated and maintained by Kaizer
 ! Please respect the original creator
 
 Thank you for using ST Bot
 
 English:
 ! This project is based on Goat Bot V2 by NTKhang
-! Updated and enhanced by Siegfried Samá
+! Updated and enhanced by Kaizer
 ! Please maintain credits for the original developer
 ! Free to use but don't sell or claim as your own
 
 Credits:
 - Original Creator: NTKhang (https://github.com/ntkhang03)
-- Current Maintainer: Siegfried Samá
+- Current Maintainer: Kaizer
