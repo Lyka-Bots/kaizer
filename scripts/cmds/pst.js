@@ -42,7 +42,7 @@ function getParticipants(threadInfo) {
 
 module.exports = {
   config: {
-    name: "attack",
+    name: "pst",
     version: "1.3.0",
     author: "Kaizer",
     countDown: 5,
