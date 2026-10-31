@@ -2,7 +2,7 @@ if (!global.GoatBot.trollSessions) global.GoatBot.trollSessions = new Map();
 const trollSessions = global.GoatBot.trollSessions;
 
 const TROLL_LINES = [
-  "okay, kaizer is trolling. Please allow me to start trolling you para manahimik ka na. Ayoko sa lahat ay bobo lalo kana.",
+  "okay, Suman is trolling. Please allow me to start trolling you para manahimik ka na. Ayoko sa lahat ay bobo lalo kana.",
   "Labas Ka AsoKo Tawag Ka Ng Amo Mo😂😂🥊🥊",
   "Wag Kang Magwala Dyan Dog [name], Di Pa Nga Tapos Yung Usapan Nagta-Tantrums Ka Na 😭",
 "Tabah Wag Kang Magwala [name], Baka Mamaya Di Mo Na Makontrol Inis Mo 🥊",
@@ -320,7 +320,7 @@ module.exports = {
   config: {
     name: "troll",
     version: "3.0.0",
-    author: "Siegfried Sama - modified by kaizer",
+    author: "Kaizer",
     countDown: 10,
     role: 2,
     description: { en: "ginagamit sa mga tangang troller" },
