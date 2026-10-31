@@ -25,7 +25,7 @@ module.exports = {
     ];
     if (!KEYWORDS.some(k => msg.startsWith(k) || msg.includes(k))) return;
 
-    const text = "🎂 HAPPY BIRTHDAY from Kaizer \nand your Family — The star must have celebrate the night you arrived, knowing the world have gained another light... And Perhaps the sky have been a little brighter ever since. 🎉🎈";
+    const text = "🎂 HAPPY BIRTHDAY from Suman \nand your Family — The star must have celebrate the night you arrived, knowing the world have gained another light... And Perhaps the sky have been a little brighter ever since. 🎉🎈";
     return api.sendMessage(text, threadID, messageID);
   }
 };
