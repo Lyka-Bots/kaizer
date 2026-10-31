@@ -1,4 +1,4 @@
-@author Kaizer
+@author Siegfried Sama
 ! Original source by NTKhang: https://github.com/ntkhang03/Goat-Bot-V2
 ! Updated and maintained by Kaizer
 ! Please respect the original creator
@@ -13,4 +13,4 @@ English:
 
 Credits:
 - Original Creator: NTKhang (https://github.com/ntkhang03)
-- Current Maintainer: Kaizer
+- Current Maintainer: Siegfried Sama
