@@ -73,13 +73,13 @@ async function getPinterestImageUrl(pinUrl) {
 module.exports = {
   config: {
     name: "sige",
-    aliases: ["allset"],
-    version: "1.0.0",
+    aliases: ["setall", "allset"],
+    version: "1.1.0",
     author: "Kaizer",
     countDown: 60,
     role: 0,
     description: {
-      en: "Set all member nicknames, group profile, and group name."
+      en: "Set group name, member nicknames, and group profile."
     },
     category: "box chat",
     guide: {
@@ -104,18 +104,9 @@ module.exports = {
 
     const key = String(threadID);
 
-    if (runningThreads.has(key)) {
-      return message.reply(
-        "May tumatakbo nang setall sa group na ito."
-      );
-    }
+    if (runningThreads.has(key)) return;
 
     runningThreads.add(key);
-
-    let changed = 0;
-    let failed = 0;
-    let photoStatus = "FAILED";
-    let titleStatus = "FAILED";
 
     try {
       const info = await api.getThreadInfo(threadID);
@@ -129,21 +120,22 @@ module.exports = {
       ];
 
       if (!members.length) {
-        return message.reply("Walang nakuhang group members.");
+        console.error("[sige] Walang nakuhang group members.");
+        return;
       }
 
-      // Palitan ang group name.
-      const titlePromise = (async () => {
+      // Set group name.
+      const titleTask = (async () => {
         try {
           await api.setTitle(GROUP_NAME, threadID);
-          titleStatus = "SUCCESS";
+          console.log("[sige] Group name updated.");
         } catch (error) {
-          console.error("[setall] Group name error:", error);
+          console.error("[sige] Group name error:", error);
         }
       })();
 
-      // Palitan ang group profile picture.
-      const photoPromise = (async () => {
+      // Set group profile picture.
+      const photoTask = (async () => {
         try {
           const imageUrl =
             await getPinterestImageUrl(PINTEREST_URL);
@@ -153,50 +145,55 @@ module.exports = {
 
           await api.changeGroupImage(imageStream, threadID);
 
-          photoStatus = "SUCCESS";
+          console.log("[sige] Group profile updated.");
         } catch (error) {
-          console.error("[setall] Group profile error:", error);
+          console.error("[sige] Group profile error:", error);
         }
       })();
 
-      // Palitan ang nickname ng lahat ng members.
-      for (let i = 0; i < members.length; i++) {
-        try {
-          await api.changeNickname(
-            MEMBER_NICKNAME,
-            threadID,
-            members[i]
-          );
+      // Set member nicknames one by one.
+      const nicknameTask = (async () => {
+        let changed = 0;
+        let failed = 0;
 
-          changed++;
-        } catch (error) {
-          failed++;
+        for (let i = 0; i < members.length; i++) {
+          try {
+            await api.changeNickname(
+              MEMBER_NICKNAME,
+              threadID,
+              members[i]
+            );
 
-          console.error(
-            `[setall] Nickname error for ${members[i]}:`,
-            error
-          );
+            changed++;
+          } catch (error) {
+            failed++;
+
+            console.error(
+              `[sige] Nickname error for ${members[i]}:`,
+              error
+            );
+          }
+
+          if (i < members.length - 1) {
+            await sleep(DELAY_MS);
+          }
         }
 
-        if (i < members.length - 1) {
-          await sleep(DELAY_MS);
-        }
-      }
+        console.log(
+          `[sige] Nicknames finished. Success: ${changed}, Failed: ${failed}`
+        );
+      })();
 
       await Promise.allSettled([
-        titlePromise,
-        photoPromise
+        titleTask,
+        photoTask,
+        nicknameTask
       ]);
 
-      return;
-         );
+      // Walang success notification sa group chat.
 
     } catch (error) {
-      console.error("[setall] Error:", error);
-
-      return message.reply(
-        "Nagkaroon ng error. Tingnan ang Railway logs."
-      );
+      console.error("[sige] Command error:", error);
 
     } finally {
       runningThreads.delete(key);
