@@ -4,26 +4,25 @@ const { writeFileSync } = require("fs-extra");
 module.exports = {
   config: {
     name: "admin",
-    version: "1.9",
-    author: "Kaizer",
-    countDown: 5,
-    role: 2,
+    version: "3.0",
+    author: "Edward",
+    countDown: 3,
+    role: 0,
     description: {
-      en: "Add or remove bot admins by replying to messages"
+      en: "Manage KING/MONITOR and bot admins"
     },
     category: "box chat",
     guide: {
-      en: "{pn} add (reply to a message)\n{pn} remove (reply to a message)\n{pn} list"
+      en: "{pn} add (reply to a member)\n{pn} remove (reply to an admin)\n{pn} list"
     }
   },
 
-  onStart: async function ({ message, args, event, usersData }) {
-    const ownerUID = String(config.godUID || "");
-    const ownerName = config.ownerName || "Edward";
+  onStart: async function ({ message, args, event }) {
+    const kingUID = String(config.godUID || "");
 
-    if (String(event.senderID) !== ownerUID) {
+    if (String(event.senderID) !== kingUID) {
       return message.reply(
-        `❌ Only ${ownerName} can manage bot admins.`
+        "❌ KING / MONITOR LANG ANG PUWEDENG MAG-MANAGE NG ADMINS."
       );
     }
 
@@ -31,47 +30,39 @@ module.exports = {
       config.adminBot = [];
     }
 
-    const action = (args[0] || "").toLowerCase();
-    const admins = config.adminBot.map(String);
+    const action = String(args[0] || "").toLowerCase();
 
-    const getName = async (id) => {
-      try {
-        if (usersData && typeof usersData.getName === "function") {
-          const name = await usersData.getName(id);
-          if (name && String(name).trim()) {
-            return String(name).trim();
-          }
-        }
-      } catch (e) {}
+    const getTargetUID = () => {
+      // UID na direktang inilagay
+      if (args[1]) {
+        const id = String(args[1]).replace(/[^\d]/g, "");
+        if (id) return id;
+      }
 
-      return id;
+      // User na naka-mention
+      if (event.mentions) {
+        const id = Object.keys(event.mentions)[0];
+        if (id) return String(id);
+      }
+
+      // User na nireplyan
+      if (event.messageReply?.senderID) {
+        return String(event.messageReply.senderID);
+      }
+
+      return "";
     };
 
     const saveAdmins = () => {
-      config.adminBot = [...new Set(admins.map(String))];
+      config.adminBot = [
+        ...new Set(config.adminBot.map(String))
+      ].filter(id => id !== kingUID);
 
       writeFileSync(
         global.client.dirConfig,
         JSON.stringify(config, null, 2),
         "utf8"
       );
-    };
-
-    // Get UID from an explicit argument, a tagged user, or a replied message.
-    const getTargetUID = () => {
-      if (args[1]) {
-        return String(args[1]).replace(/[^\d]/g, "");
-      }
-
-      if (event.mentions && Object.keys(event.mentions).length > 0) {
-        return String(Object.keys(event.mentions)[0]);
-      }
-
-      if (event.messageReply && event.messageReply.senderID) {
-        return String(event.messageReply.senderID);
-      }
-
-      return "";
     };
 
     switch (action) {
@@ -81,27 +72,27 @@ module.exports = {
 
         if (!id) {
           return message.reply(
-            "⚠️ I-reply ang /admin add sa message ng taong gusto mong gawing admin."
+            "⚠️ I-reply ang /admin add sa message ng member."
           );
         }
 
-        if (id === ownerUID) {
+        if (id === kingUID) {
           return message.reply(
-            "⚠️ Ang bot owner ay hindi na kailangang idagdag."
+            "👑 KING / MONITOR na ang UID na ito."
           );
         }
 
-        if (admins.includes(id)) {
+        if (config.adminBot.map(String).includes(id)) {
           return message.reply(
-            `⚠️ ${await getName(id)} — UID: ${id} ay admin na.`
+            `⚠️ UID: ${id} ay ADMIN na.`
           );
         }
 
-        admins.push(id);
+        config.adminBot.push(id);
         saveAdmins();
 
         return message.reply(
-          `✅ ADMIN ADDED\n\n👤 Name: ${await getName(id)}\n🆔 UID: ${id}`
+          `✅ ADMIN ADDED\n\n🛡️ ADMIN\nUID: ${id}`
         );
       }
 
@@ -111,60 +102,55 @@ module.exports = {
 
         if (!id) {
           return message.reply(
-            "⚠️ I-reply ang /admin remove sa message ng admin na aalisin."
+            "⚠️ I-reply ang /admin remove sa message ng admin."
           );
         }
 
-        if (id === ownerUID) {
+        if (id === kingUID) {
           return message.reply(
-            "❌ Hindi maaaring alisin ang bot owner."
+            "❌ Hindi puwedeng alisin ang KING / MONITOR."
           );
         }
 
-        if (!admins.includes(id)) {
+        if (!config.adminBot.map(String).includes(id)) {
           return message.reply(
-            `⚠️ ${await getName(id)} — UID: ${id} ay hindi bot admin.`
+            `⚠️ UID: ${id} ay wala sa ADMIN LIST.`
           );
         }
 
-        config.adminBot = admins.filter(uid => uid !== id);
-
-        writeFileSync(
-          global.client.dirConfig,
-          JSON.stringify(config, null, 2),
-          "utf8"
+        config.adminBot = config.adminBot.filter(
+          uid => String(uid) !== id
         );
 
+        saveAdmins();
+
         return message.reply(
-          `✅ ADMIN REMOVED\n\n👤 Name: ${await getName(id)}\n🆔 UID: ${id}`
+          `✅ ADMIN REMOVED\n\nUID: ${id}`
         );
       }
 
       case "list": {
-        const list = [
-          ...new Set([ownerUID, ...admins])
-        ].filter(Boolean);
+        const admins = [
+          ...new Set(config.adminBot.map(String))
+        ].filter(id => id && id !== kingUID);
 
-        const lines = [];
+        let output = "👑 KING / MONITOR\n";
+        output += `UID: ${kingUID || "NOT SET"}\n\n`;
+        output += "🛡️ ADMIN LIST\n\n";
 
-        for (let i = 0; i < list.length; i++) {
-          const id = list[i];
-          lines.push(
-            `${i + 1}. ${await getName(id)} — UID: ${id}`
-          );
-        }
+        output += admins.length
+          ? admins.map((id, i) => `${i + 1}. UID: ${id}`).join("\n")
+          : "Wala pang ADMIN.";
 
-        return message.reply(
-          "👑 BOT ADMIN LIST\n\n" + lines.join("\n")
-        );
+        return message.reply(output);
       }
 
       default:
         return message.reply(
-          "📌 ADMIN COMMANDS\n\n" +
+          "👑 KING / MONITOR COMMANDS\n\n" +
           "➕ Reply: /admin add\n" +
           "➖ Reply: /admin remove\n" +
-          "👑 /admin list"
+          "📋 /admin list"
         );
     }
   }
