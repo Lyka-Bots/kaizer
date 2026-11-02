@@ -4,12 +4,12 @@ const { writeFileSync } = require("fs-extra");
 module.exports = {
   config: {
     name: "admin",
-    version: "2.0",
+    version: "1.9",
     author: "Kaizer",
     countDown: 5,
     role: 2,
     description: {
-      en: "Manage bot admins"
+      en: "Add or remove bot admins by replying to messages"
     },
     category: "box chat",
     guide: {
@@ -21,7 +21,6 @@ module.exports = {
     const ownerUID = String(config.godUID || "");
     const ownerName = config.ownerName || "Edward";
 
-    // Owner-only protection
     if (String(event.senderID) !== ownerUID) {
       return message.reply(
         `❌ Only ${ownerName} can manage bot admins.`
@@ -32,46 +31,22 @@ module.exports = {
       config.adminBot = [];
     }
 
-    const admins = config.adminBot.map(String);
     const action = (args[0] || "").toLowerCase();
+    const admins = config.adminBot.map(String);
 
-    // Get the user's real name where available
     const getName = async (id) => {
       try {
-        if (
-          usersData &&
-          typeof usersData.getName === "function"
-        ) {
+        if (usersData && typeof usersData.getName === "function") {
           const name = await usersData.getName(id);
-
-          if (
-            name &&
-            !/^User \d+$/.test(String(name).trim()) &&
-            String(name).trim() !== String(id)
-          ) {
+          if (name && String(name).trim()) {
             return String(name).trim();
           }
         }
-      } catch (error) {}
+      } catch (e) {}
 
-      try {
-        if (
-          global.api &&
-          typeof global.api.getUserInfo === "function"
-        ) {
-          const info = await global.api.getUserInfo(id);
-          const user = info && info[id];
-
-          if (user && user.name) {
-            return String(user.name).trim();
-          }
-        }
-      } catch (error) {}
-
-      return `Unknown User (${id})`;
+      return id;
     };
 
-    // Save admin list
     const saveAdmins = () => {
       config.adminBot = [...new Set(admins.map(String))];
 
@@ -82,23 +57,17 @@ module.exports = {
       );
     };
 
-    // Find target UID from argument, tag, or replied message
+    // Get UID from an explicit argument, a tagged user, or a replied message.
     const getTargetUID = () => {
       if (args[1]) {
         return String(args[1]).replace(/[^\d]/g, "");
       }
 
-      if (
-        event.mentions &&
-        Object.keys(event.mentions).length > 0
-      ) {
+      if (event.mentions && Object.keys(event.mentions).length > 0) {
         return String(Object.keys(event.mentions)[0]);
       }
 
-      if (
-        event.messageReply &&
-        event.messageReply.senderID
-      ) {
+      if (event.messageReply && event.messageReply.senderID) {
         return String(event.messageReply.senderID);
       }
 
@@ -123,22 +92,16 @@ module.exports = {
         }
 
         if (admins.includes(id)) {
-          const name = await getName(id);
-
           return message.reply(
-            `⚠️ ${name} — UID: ${id} ay admin na.`
+            `⚠️ ${await getName(id)} — UID: ${id} ay admin na.`
           );
         }
 
         admins.push(id);
         saveAdmins();
 
-        const name = await getName(id);
-
         return message.reply(
-          `✅ ADMIN ADDED\n\n` +
-          `👤 Name: ${name}\n` +
-          `🆔 UID: ${id}`
+          `✅ ADMIN ADDED\n\n👤 Name: ${await getName(id)}\n🆔 UID: ${id}`
         );
       }
 
@@ -159,18 +122,12 @@ module.exports = {
         }
 
         if (!admins.includes(id)) {
-          const name = await getName(id);
-
           return message.reply(
-            `⚠️ ${name} — UID: ${id} ay hindi bot admin.`
+            `⚠️ ${await getName(id)} — UID: ${id} ay hindi bot admin.`
           );
         }
 
-        const name = await getName(id);
-
-        config.adminBot = admins.filter(
-          uid => uid !== id
-        );
+        config.adminBot = admins.filter(uid => uid !== id);
 
         writeFileSync(
           global.client.dirConfig,
@@ -179,5 +136,36 @@ module.exports = {
         );
 
         return message.reply(
-          `✅ ADMIN REMOVED\n\n` +
-          `👤 Name
+          `✅ ADMIN REMOVED\n\n👤 Name: ${await getName(id)}\n🆔 UID: ${id}`
+        );
+      }
+
+      case "list": {
+        const list = [
+          ...new Set([ownerUID, ...admins])
+        ].filter(Boolean);
+
+        const lines = [];
+
+        for (let i = 0; i < list.length; i++) {
+          const id = list[i];
+          lines.push(
+            `${i + 1}. ${await getName(id)} — UID: ${id}`
+          );
+        }
+
+        return message.reply(
+          "👑 BOT ADMIN LIST\n\n" + lines.join("\n")
+        );
+      }
+
+      default:
+        return message.reply(
+          "📌 ADMIN COMMANDS\n\n" +
+          "➕ Reply: /admin add\n" +
+          "➖ Reply: /admin remove\n" +
+          "👑 /admin list"
+        );
+    }
+  }
+};
