@@ -7,7 +7,7 @@ module.exports = {
     version: "3.0",
     author: "Edward",
     countDown: 3,
-    role: 0,
+    role: 2,
     description: {
       en: "Manage KING/MONITOR and bot admins"
     },
