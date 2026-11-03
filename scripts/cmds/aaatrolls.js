@@ -319,73 +319,104 @@ function buildMsg(raw, name, targetID) {
 module.exports = {
   config: {
     name: "troll",
-    version: "3.0.0",
-    author: "Siegfried Sama - modified by kaizer",
-    countDown: 10,
+    version: "5.0",
+    author: "Edward",
+    countDown: 3,
     role: 2,
-    description: { en: "ginagamit sa mga tangang troller" },
+    description: {
+      en: "Reply-based troll command with automatic stop phrase"
+    },
     category: "fun",
-    guide: { en: "{pn} @mention | {pn} tigil" }
+    guide: {
+      en: "{pn} - Reply to someone's message\nSay 'ok na' to stop."
+    }
   },
 
-  onStart: async function ({ api, event, usersData, message, args }) {
-    const { threadID, mentions } = event;
-    const prefix = global.GoatBot.config.prefix;
+  // START TROLL
+  onStart: async function ({ api, event, usersData, message }) {
+    const { threadID, messageReply } = event;
 
-    if (args[0] && args[0].toLowerCase() === "tigil") {
-      if (!trollSessions.has(threadID)) {
-        return message.reply("Walang aktibong troll session sa thread na ito.");
-      }
-      const session = trollSessions.get(threadID);
-      session.aborted = true;
-      trollSessions.delete(threadID);
-      return message.reply("sige, boss kaizer");
+    if (trollSessions.has(threadID)) {
+      return message.reply("May active troll session pa!");
     }
 
-        if (trollSessions.has(threadID)) {
-      return message.reply("⚠️ May umaandar pang troll session dito. Gamitin: " + prefix + "troll tigil");
+    if (!messageReply || !messageReply.senderID) {
+      return message.reply(
+        "diba may nag chat? oh ngayon ayon i reply mo ng /troll hindi na kailangan mag messenger alam kong tamad ka e"
+      );
     }
 
-    const mentionIDs = Object.keys(mentions || {});
-    if (!mentionIDs.length) {
-      return message.reply("tag mo yung i t-troll boss Kaizer");
+    const targetID = messageReply.senderID;
+
+    if (targetID === api.getCurrentUserID()) {
+      return message.reply("ina neto, idadamay pa ako.");
     }
 
-    const targetID = mentionIDs[0];
-    const name = await usersData.getName(targetID);
+    if (targetID === event.senderID) {
+      return message.reply("wag kana engot ka HAHAHAHAHHA");
+    }
+
+    let name = "Kaibigan";
+
+    try {
+      name = await usersData.getName(targetID) || name;
+    } catch (e) {}
 
     const session = {
       aborted: false,
-      targetID,
-      targetName: name,
-      replyIndex: 0,
-      startTime: Date.now()
+      targetID
     };
+
     trollSessions.set(threadID, session);
 
-    for (let i = 0; i < TROLL_LINES.length; i++) {
-      if (session.aborted) break;
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      if (session.aborted) break;
-      const msg = buildMsg(TROLL_LINES[i], name, targetID);
-      await new Promise(resolve => {
-        try {
-          api.sendMessage(msg, threadID, () => resolve());
-        } catch (e) {
-          resolve();
-        }
-        setTimeout(resolve, 5000);
-      });
+    try {
+      for (const line of TROLL_LINES) {
+        if (session.aborted) break;
+
+        const body = line.replace(/\[name\]/g, name);
+
+        await new Promise(resolve => {
+          let finished = false;
+
+          const done = () => {
+            if (finished) return;
+            finished = true;
+            resolve();
+          };
+
+          api.sendMessage(body, threadID, done);
+          setTimeout(done, 5000);
+        });
+
+        if (session.aborted) break;
+
+        await sleep(2500);
+      }
+    } catch (err) {
+      console.error("[TROLL ERROR]", err);
+    } finally {
+      if (trollSessions.get(threadID) === session) {
+        trollSessions.delete(threadID);
+      }
     }
+  },
 
-    if (!session.aborted) {
-      const elapsed = Math.floor((Date.now() - session.startTime) / 1000);
-      const mins = Math.floor(elapsed / 60);
-      const secs = elapsed % 60;
-      const timeStr = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
+  // AUTOMATIC STOP PHRASE
+  onChat: async function ({ event }) {
+    const { threadID, body } = event;
 
-      const finalBody = `MYSTERIOUSq ON TOP 🔝\n\n${name} ON TRASH🚮🚮🚮\n\n\nREASON BAKIT NATALO:\n\n- MAHINA\n- NAASAR SA SIMPLING TROLL\n- DI AKO KAYANG SABAYAN\n- MATABA ANG MGA KAMAY\n- SA CLIPBOARD LANG UMAASA SI TABA\n- ASUKO SI TABA\n\nDuration:\n${timeStr}`;
+    if (!body) return;
 
+    if (body.trim().toLowerCase() === "ok na") {
+      const session = trollSessions.get(threadID);
+
+      if (session) {
+        session.aborted = true;
+        trollSessions.delete(threadID);
+      }
+    }
+  }
+}; 
       const finalMentions = [];
       let idx = 0;
       while ((idx = finalBody.indexOf(name, idx)) !== -1) {
