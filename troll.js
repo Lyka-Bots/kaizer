@@ -206,106 +206,107 @@ const TROLL_LINES = [
   "di mo'ko kayang sabayan tas asar kapa HAHAHHAHA",
   "Naaawa Nako Sayo Bagal Mo Magreply Taba🥊🤣",
   "Mysteriousq Win😃💯"
-];
-
-function buildMsg(raw, name, targetID) {
-  if (!raw.includes("[name]")) return { body: raw };
-  const body = raw.replace(/\[name\]/g, name);
-  const mentions = [];
-  let idx = 0;
-  while ((idx = body.indexOf(name, idx)) !== -1) {
-    mentions.push({ tag: name, id: targetID, fromIndex: idx });
-    idx += name.length;
-  }
-  return { body, mentions };
-}
+  ]:
+setTimeout(resolve, ms));
 
 module.exports = {
   config: {
     name: "troll",
-    version: "3.0.0",
-    author: "Siegfried Samá",
-    countDown: 10,
+    version: "5.0",
+    author: "Kaizer",
+    countDown: 3,
     role: 2,
-    description: { en: "ginagamit sa mga tangang troller" },
+    description: {
+      en: "Reply-based troll command with automatic stop phrase"
+    },
     category: "fun",
-    guide: { en: "{pn} @mention | {pn} tigil" }
+    guide: {
+      en: "{pn} - Reply to someone's message\nSay 'ok na' to stop."
+    }
   },
 
-  onStart: async function ({ api, event, usersData, message, args }) {
-    const { threadID, mentions } = event;
-    const prefix = global.GoatBot.config.prefix;
-
-    if (args[0] && args[0].toLowerCase() === "tigil") {
-      if (!trollSessions.has(threadID)) {
-        return message.reply("Walang aktibong troll session sa thread na ito.");
-      }
-      const session = trollSessions.get(threadID);
-      session.aborted = true;
-      trollSessions.delete(threadID);
-      return message.reply("✅ Troll session naitigil na.");
-    }
+  // START TROLL
+  onStart: async function ({ api, event, usersData, message }) {
+    const { threadID, messageReply } = event;
 
     if (trollSessions.has(threadID)) {
-      return message.reply("⚠️ May umaandar pang troll session dito. Gamitin: " + prefix + "troll tigil");
+      return message.reply("May active troll session pa!");
     }
 
-    const mentionIDs = Object.keys(mentions || {});
-    if (!mentionIDs.length) {
-      return message.reply("tag mo yung i t-troll");
+    if (!messageReply || !messageReply.senderID) {
+      return message.reply(
+        "Mag-reply muna sa message ng target, saka gamitin ang /troll."
+      );
     }
 
-    const targetID = mentionIDs[0];
-    const name = await usersData.getName(targetID);
+    const targetID = messageReply.senderID;
+
+    if (targetID === api.getCurrentUserID()) {
+      return message.reply("wag ako, tanginaneto.");
+    }
+
+    if (targetID === event.senderID) {
+      return message.reply("ayoko, admin ka e, i shutdown mo pa ako.");
+    }
+
+    let name = "Friend";
+
+    try {
+      name = await usersData.getName(targetID) || name;
+    } catch (e) {}
 
     const session = {
       aborted: false,
-      targetID,
-      targetName: name,
-      replyIndex: 0,
-      startTime: Date.now()
+      targetID
     };
+
     trollSessions.set(threadID, session);
 
-    for (let i = 0; i < TROLL_LINES.length; i++) {
-      if (session.aborted) break;
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      if (session.aborted) break;
-      const msg = buildMsg(TROLL_LINES[i], name, targetID);
-      await new Promise(resolve => {
-        try {
-          api.sendMessage(msg, threadID, () => resolve());
-        } catch (e) {
-          resolve();
-        }
-        setTimeout(resolve, 5000);
-      });
-    }
+    try {
+      for (const line of TROLL_LINES) {
+        if (session.aborted) break;
 
-    if (!session.aborted) {
-      const elapsed = Math.floor((Date.now() - session.startTime) / 1000);
-      const mins = Math.floor(elapsed / 60);
-      const secs = elapsed % 60;
-      const timeStr = mins > 0 ? `${mins} min ${secs} sec` : `${secs} sec`;
+        const body = line.replace(/\[name\]/g, name);
 
-      const finalBody = `MYSTERIOUSq ON TOP 🔝\n\n${name} ON TRASH🚮🚮🚮\n\n\nREASON BAKIT NATALO:\n\n- MAHINA\n- NAASAR SA SIMPLING TROLL\n- DI AKO KAYANG SABAYAN\n- MATABA ANG MGA KAMAY\n- SA CLIPBOARD LANG UMAASA SI TABA\n- ASUKO SI TABA\n\nDuration:\n${timeStr}`;
+        await new Promise(resolve => {
+          let finished = false;
 
-      const finalMentions = [];
-      let idx = 0;
-      while ((idx = finalBody.indexOf(name, idx)) !== -1) {
-        finalMentions.push({ tag: name, id: targetID, fromIndex: idx });
-        idx += name.length;
+          const done = () => {
+            if (finished) return;
+            finished = true;
+            resolve();
+          };
+
+          api.sendMessage(body, threadID, done);
+          setTimeout(done, 5000);
+        });
+
+        if (session.aborted) break;
+
+        await sleep(2500);
       }
-
-      await new Promise(resolve => api.sendMessage(
-        { body: finalBody, mentions: finalMentions },
-        threadID,
-        resolve
-      ));
+    } catch (err) {
+      console.error("[TROLL ERROR]", err);
+    } finally {
+      if (trollSessions.get(threadID) === session) {
+        trollSessions.delete(threadID);
+      }
     }
+  },
 
-    if (trollSessions.get(threadID) === session) {
-      trollSessions.delete(threadID);
+  // AUTOMATIC STOP PHRASE
+  onChat: async function ({ event }) {
+    const { threadID, body } = event;
+
+    if (!body) return;
+
+    if (body.trim().toLowerCase() === "ok na") {
+      const session = trollSessions.get(threadID);
+
+      if (session) {
+        session.aborted = true;
+        trollSessions.delete(threadID);
+      }
     }
   }
 };
