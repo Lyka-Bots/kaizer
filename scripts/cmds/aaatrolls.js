@@ -239,12 +239,12 @@ module.exports = {
     const { threadID, messageReply } = event;
 
     if (trollSessions.has(threadID)) {
-      return message.reply("May active troll session pa!");
+      return message.reply("nag troll pa ko kita mo ba? o duling lng?!");
     }
 
     if (!messageReply || !messageReply.senderID) {
       return message.reply(
-        "Mag-reply ka muna sa message ng gusto mong i-troll, tapos gamitin ang /troll."
+        "di mo na need mag messenger alam ko naman na tamad ka tanginamo kang admin ka kaya gamitin mo nalanc yung /troll tapos ireply mo kung sino mo pag tripan, inaka kang hayop ka"
       );
     }
 
@@ -255,7 +255,7 @@ module.exports = {
     }
 
     if (String(targetID) === String(event.senderID)) {
-      return message.reply("Sarili mo ang na-replyan mo HAHAHAHA.");
+      return message.reply("bawal mag troll sa sarili engot ka tlaga");
     }
 
     let name = "Kaibigan";
