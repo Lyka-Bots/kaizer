@@ -1,5 +1,8 @@
-// Sudoku Game for Kaizer GoatBot
-// Author: Edward
+// ========================================
+// SUDOKU GAME - KAIZER BOT
+// Author: Kaizer
+// Version: 2.0
+// ========================================
 
 if (!global.GoatBot.sudokuGames) {
   global.GoatBot.sudokuGames = new Map();
@@ -7,6 +10,7 @@ if (!global.GoatBot.sudokuGames) {
 
 const games = global.GoatBot.sudokuGames;
 
+// RANDOM SHUFFLE
 function shuffle(arr) {
   const a = [...arr];
 
@@ -18,13 +22,16 @@ function shuffle(arr) {
   return a;
 }
 
+// CREATE SOLUTION
 function createSolution() {
   const bands = shuffle([0, 1, 2]);
+
   const rows = bands.flatMap(b =>
     shuffle([0, 1, 2]).map(r => b * 3 + r)
   );
 
   const stacks = shuffle([0, 1, 2]);
+
   const cols = stacks.flatMap(s =>
     shuffle([0, 1, 2]).map(c => s * 3 + c)
   );
@@ -32,10 +39,13 @@ function createSolution() {
   const nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
   return rows.map(r =>
-    cols.map(c => nums[(r * 3 + Math.floor(r / 3) + c) % 9])
+    cols.map(c =>
+      nums[(r * 3 + Math.floor(r / 3) + c) % 9]
+    )
   );
 }
 
+// CREATE PUZZLE
 function createPuzzle(level) {
   const solution = createSolution();
   const board = solution.map(row => [...row]);
@@ -62,47 +72,69 @@ function createPuzzle(level) {
   };
 }
 
+// FORMAT TIME
 function formatTime(ms) {
   const seconds = Math.floor(ms / 1000);
 
-  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+  const minutes = Math.floor(seconds / 60);
+  const remaining = seconds % 60;
+
+  return (
+    String(minutes).padStart(2, '0') +
+    ':' +
+    String(remaining).padStart(2, '0')
+  );
 }
 
+// DRAW BOARD - FIXED SPACING
 function drawBoard(game) {
   const out = [
     `🧩 SUDOKU — ${game.level.toUpperCase()}`,
     `⏱️ Time: ${formatTime(Date.now() - game.startedAt)} | ❌ Mistakes: ${game.mistakes}/${game.maxMistakes}`,
     '',
-    '       1 2 3   4 5 6   7 8 9',
-    '     ┌───────┬───────┬───────┐'
+    '       1  2  3   4  5  6   7  8  9',
+    '     ┌───────────┬───────────┬───────────┐'
   ];
 
   for (let r = 0; r < 9; r++) {
-    const cells = game.board[r].map(n => n || '·');
+    const cells = game.board[r].map(n =>
+      n === 0 ? '·' : String(n)
+    );
+
+    const left = cells.slice(0, 3).join('  ');
+    const middle = cells.slice(3, 6).join('  ');
+    const right = cells.slice(6, 9).join('  ');
 
     out.push(
-      `${String.fromCharCode(65 + r)}    │ ${cells.slice(0, 3).join(' ')} │ ${cells.slice(3, 6).join(' ')} │ ${cells.slice(6, 9).join(' ')} │`
+      `${String.fromCharCode(65 + r)}    │ ${left} │ ${middle} │ ${right} │`
     );
 
     if (r === 2 || r === 5) {
-      out.push('     ├───────┼───────┼───────┤');
+      out.push(
+        '     ├───────────┼───────────┼───────────┤'
+      );
     }
   }
 
-  out.push('     └───────┴───────┴───────┘');
+  out.push(
+    '     └───────────┴───────────┴───────────┘'
+  );
+
   out.push('');
   out.push('✍️ Reply: A1 5');
   out.push('💡 Commands: hint | erase A1 | quit');
 
-  return out.join('\n');
+  return '```' + '\n' + out.join('\n') + '\n' + '```';
 }
 
+// CHECK WIN
 function isSolved(game) {
   return game.board.every((row, r) =>
     row.every((n, c) => n === game.solution[r][c])
   );
 }
 
+// PARSE CELL
 function parseCell(text) {
   const match = text.match(/^([a-i])([1-9])$/i);
 
@@ -114,34 +146,63 @@ function parseCell(text) {
   ];
 }
 
+// REGISTER REPLY
+function registerReply(sent, owner, commandName) {
+  if (sent && sent.messageID) {
+    global.GoatBot.onReply.set(sent.messageID, {
+      commandName,
+      author: owner,
+      gameOwner: owner
+    });
+  }
+}
+
 module.exports = {
   config: {
     name: 'sudoku',
-    aliases: ['sdk'],
-    version: '1.0.0',
-    author: 'Kaizer',
-    countDown: 5,
+    aliases: ['sdk', 'sukodu'],
+    version: '2.0.0',
+    author: 'Edward',
+    countDown: 3,
     role: 0,
+
     description: {
-      en: 'Play an interactive Sudoku puzzle.'
+      en: 'Play a Sudoku puzzle game.'
     },
+
     category: 'game',
+
     guide: {
-      en: '{pn} [easy|medium|hard|expert]'
+      en:
+        '{pn}\n' +
+        '{pn} easy\n' +
+        '{pn} medium\n' +
+        '{pn} hard\n' +
+        '{pn} expert'
     }
   },
 
-  onStart: async function ({ message, event, args, commandName }) {
+  // START GAME
+  onStart: async function ({
+    message,
+    event,
+    args,
+    commandName
+  }) {
+    const owner = event.senderID;
     const action = (args[0] || '').toLowerCase();
 
     if (action === 'quit') {
-      games.delete(event.senderID);
+      games.delete(owner);
       return message.reply('🛑 Your Sudoku game has ended.');
     }
 
-    const level = ['easy', 'medium', 'hard', 'expert'].includes(action)
-      ? action
-      : 'medium';
+    const level = [
+      'easy',
+      'medium',
+      'hard',
+      'expert'
+    ].includes(action) ? action : 'medium';
 
     const puzzle = createPuzzle(level);
 
@@ -153,33 +214,41 @@ module.exports = {
       maxMistakes: 5,
       moves: 0,
       threadID: event.threadID,
-      senderID: event.senderID
+      senderID: owner
     };
 
-    games.set(event.senderID, game);
+    games.set(owner, game);
 
     const sent = await message.reply(drawBoard(game));
 
-    if (sent && sent.messageID) {
-      global.GoatBot.onReply.set(sent.messageID, {
-        commandName: commandName || module.exports.config.name,
-        author: event.senderID,
-        gameOwner: event.senderID
-      });
-    }
+    registerReply(
+      sent,
+      owner,
+      commandName || module.exports.config.name
+    );
   },
 
-  onReply: async function ({ message, Reply, event, commandName }) {
+  // GAME REPLY
+  onReply: async function ({
+    message,
+    Reply,
+    event,
+    commandName
+  }) {
     const owner = Reply.gameOwner || Reply.author;
 
     if (event.senderID !== owner) {
-      return message.reply('⛔ This Sudoku game belongs to another player.');
+      return message.reply(
+        '⛔ This Sudoku game belongs to another player.'
+      );
     }
 
     const game = games.get(owner);
 
     if (!game) {
-      return message.reply('⚠️ No active game. Start with /sudoku.');
+      return message.reply(
+        '⚠️ No active Sudoku game. Start with /sudoku.'
+      );
     }
 
     if (game.threadID !== event.threadID) return;
@@ -187,65 +256,83 @@ module.exports = {
     const input = (event.body || '').trim();
     const lower = input.toLowerCase();
 
+    // QUIT
     if (lower === 'quit') {
       games.delete(owner);
       return message.reply('🛑 Sudoku game ended.');
     }
 
+    // HINT
     if (lower === 'hint') {
       const empty = [];
 
       for (let r = 0; r < 9; r++) {
         for (let c = 0; c < 9; c++) {
-          if (!game.board[r][c]) {
+          if (game.board[r][c] === 0) {
             empty.push([r, c]);
           }
         }
       }
 
       if (!empty.length) {
-        return message.reply('There are no empty cells left.');
+        return message.reply('No empty cells remaining.');
       }
 
-      const [r, c] = empty[Math.floor(Math.random() * empty.length)];
+      const [r, c] = empty[
+        Math.floor(Math.random() * empty.length)
+      ];
 
       game.board[r][c] = game.solution[r][c];
       game.moves++;
+    }
 
-    } else if (lower.startsWith('erase ')) {
+    // ERASE
+    else if (lower.startsWith('erase ')) {
       const pos = parseCell(input.slice(6).trim());
 
       if (!pos) {
-        return message.reply('⚠️ Use: erase A1');
+        return message.reply('⚠️ Correct format: erase A1');
       }
 
       const [r, c] = pos;
 
       if (game.fixed[r][c]) {
-        return message.reply('🔒 You cannot erase a starting number.');
+        return message.reply(
+          '🔒 You cannot erase a starting number.'
+        );
       }
 
       game.board[r][c] = 0;
+    }
 
-    } else {
+    // NUMBER INPUT
+    else {
       const move = input.match(
         /^([a-i])([1-9])\s*(?:=|,|\s)\s*([1-9])$/i
       );
 
       if (!move) {
-        return message.reply('⚠️ Invalid format. Example: A1 5');
+        return message.reply(
+          '⚠️ Invalid format!\nExample: A1 5'
+        );
       }
 
-      const r = move[1].toUpperCase().charCodeAt(0) - 65;
+      const r =
+        move[1].toUpperCase().charCodeAt(0) - 65;
+
       const c = Number(move[2]) - 1;
       const n = Number(move[3]);
 
       if (game.fixed[r][c]) {
-        return message.reply('🔒 That cell is a fixed starting number.');
+        return message.reply(
+          '🔒 That cell is a fixed starting number.'
+        );
       }
 
       if (game.board[r][c] === n) {
-        return message.reply('That cell already contains that number.');
+        return message.reply(
+          'That cell already contains that number.'
+        );
       }
 
       if (n !== game.solution[r][c]) {
@@ -254,13 +341,21 @@ module.exports = {
         if (game.mistakes >= game.maxMistakes) {
           games.delete(owner);
 
+          const solution = game.solution
+            .map(row => row.join('  '))
+            .join('\n');
+
           return message.reply(
-            `💔 GAME OVER!\nYou reached ${game.maxMistakes} mistakes.\n\nCorrect solution:\n${game.solution.map(row => row.join(' ')).join('\n')}`
+            `💔 GAME OVER!\n` +
+            `You reached ${game.maxMistakes} mistakes.\n\n` +
+            `Correct solution:\n` +
+            `\`\`\`\n${solution}\n\`\`\``
           );
         }
 
         return message.reply(
-          `❌ Incorrect number!\nMistakes: ${game.mistakes}/${game.maxMistakes}`
+          `❌ Incorrect number!\n` +
+          `Mistakes: ${game.mistakes}/${game.maxMistakes}`
         );
       }
 
@@ -268,14 +363,24 @@ module.exports = {
       game.moves++;
     }
 
+    // WIN CHECK
     if (isSolved(game)) {
-      const elapsed = formatTime(Date.now() - game.startedAt);
+      const elapsed = formatTime(
+        Date.now() - game.startedAt
+      );
+
+      const baseScore = {
+        easy: 500,
+        medium: 750,
+        hard: 1000,
+        expert: 1500
+      }[game.level];
 
       const score = Math.max(
         100,
-        ({ easy: 500, medium: 750, hard: 1000, expert: 1500 }[game.level])
-        - game.mistakes * 50
-        - game.moves * 2
+        baseScore -
+        game.mistakes * 50 -
+        game.moves * 2
       );
 
       games.delete(owner);
@@ -286,18 +391,17 @@ module.exports = {
         `⏱️ Time: ${elapsed}\n` +
         `❌ Mistakes: ${game.mistakes}\n` +
         `⭐ Score: ${score}\n\n` +
-        `Great job! Play again with /sudoku.`
+        `Congratulations! 🎉`
       );
     }
 
+    // UPDATE BOARD
     const sent = await message.reply(drawBoard(game));
 
-    if (sent && sent.messageID) {
-      global.GoatBot.onReply.set(sent.messageID, {
-        commandName: commandName || module.exports.config.name,
-        author: owner,
-        gameOwner: owner
-      });
-    }
+    registerReply(
+      sent,
+      owner,
+      commandName || module.exports.config.name
+    );
   }
 };
