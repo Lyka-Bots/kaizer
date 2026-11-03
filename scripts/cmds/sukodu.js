@@ -1,7 +1,7 @@
 // ========================================
-// SUDOKU GAME - KAIZER BOT
-// Author: Kaizer
-// Version: 2.0
+// KAIZER SUDOKU GAME
+// Author: Edward
+// Version: 3.0
 // ========================================
 
 if (!global.GoatBot.sudokuGames) {
@@ -76,17 +76,14 @@ function createPuzzle(level) {
 function formatTime(ms) {
   const seconds = Math.floor(ms / 1000);
 
-  const minutes = Math.floor(seconds / 60);
-  const remaining = seconds % 60;
-
   return (
-    String(minutes).padStart(2, '0') +
+    String(Math.floor(seconds / 60)).padStart(2, '0') +
     ':' +
-    String(remaining).padStart(2, '0')
+    String(seconds % 60).padStart(2, '0')
   );
 }
 
-// DRAW BOARD - FIXED SPACING
+// DRAW BOARD
 function drawBoard(game) {
   const out = [
     `🧩 SUDOKU — ${game.level.toUpperCase()}`,
@@ -122,9 +119,9 @@ function drawBoard(game) {
 
   out.push('');
   out.push('✍️ Reply: A1 5');
-  out.push('💡 Commands: hint | erase A1 | quit');
+  out.push('💡 Reply: hint | erase A1 | quit');
 
-  return '```' + '\n' + out.join('\n') + '\n' + '```';
+  return '```\n' + out.join('\n') + '\n```';
 }
 
 // CHECK WIN
@@ -157,24 +154,25 @@ function registerReply(sent, owner, commandName) {
   }
 }
 
+// COMMAND
 module.exports = {
   config: {
     name: 'sudoku',
     aliases: ['sdk', 'sukodu'],
-    version: '2.0.0',
+    version: '3.0.0',
     author: 'Edward',
     countDown: 3,
     role: 0,
 
     description: {
-      en: 'Play a Sudoku puzzle game.'
+      en: 'Play Sudoku game.'
     },
 
     category: 'game',
 
     guide: {
       en:
-        '{pn}\n' +
+        '{pn} help\n' +
         '{pn} easy\n' +
         '{pn} medium\n' +
         '{pn} hard\n' +
@@ -182,7 +180,7 @@ module.exports = {
     }
   },
 
-  // START GAME
+  // START
   onStart: async function ({
     message,
     event,
@@ -192,11 +190,36 @@ module.exports = {
     const owner = event.senderID;
     const action = (args[0] || '').toLowerCase();
 
+    // HELP
+    if (action === 'help') {
+      return message.reply(
+        `🧩 SUDOKU — HOW TO PLAY
+
+1. Fill in empty boxes using numbers 1–9.
+2. Each row, column, and 3×3 box must have no repeated numbers.
+3. Reply using this format: A1 5
+4. Use "hint" if you need help.
+5. Use "erase A1" to erase your answer.
+6. You only have 5 mistakes.
+
+🏆 Complete the board to win!
+
+📌 COMMANDS:
+ /sdk easy
+ /sdk medium
+ /sdk hard
+ /sdk expert
+ /sdk quit`
+      );
+    }
+
+    // QUIT
     if (action === 'quit') {
       games.delete(owner);
       return message.reply('🛑 Your Sudoku game has ended.');
     }
 
+    // DIFFICULTY
     const level = [
       'easy',
       'medium',
@@ -228,7 +251,7 @@ module.exports = {
     );
   },
 
-  // GAME REPLY
+  // REPLY
   onReply: async function ({
     message,
     Reply,
@@ -247,7 +270,7 @@ module.exports = {
 
     if (!game) {
       return message.reply(
-        '⚠️ No active Sudoku game. Start with /sudoku.'
+        '⚠️ No active Sudoku game. Start with /sdk.'
       );
     }
 
