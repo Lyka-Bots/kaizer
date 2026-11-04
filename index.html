@@ -1,0 +1,48 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BratLyrics Music Video</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>bratlyrics</h1>
+  <p>music video generator</p>
+</header>
+
+<main>
+  <div class="search">
+    <input id="search" placeholder="Search a song...">
+    <button onclick="searchSong()">SEARCH</button>
+  </div>
+
+  <div id="results"></div>
+
+  <section class="video">
+    <div class="song-info">
+      <span id="songTitle">BRATLYRICS</span>
+      <span id="artist">YOUR MUSIC. YOUR LYRICS.</span>
+    </div>
+
+    <div id="lyrics">
+      <h2>your lyrics<br>will appear here.</h2>
+    </div>
+
+    <div class="controls">
+      <audio id="audio" controls></audio>
+      <p id="time">00:00</p>
+    </div>
+  </section>
+
+  <button class="export" onclick="exportVideo()">
+    EXPORT VIDEO
+  </button>
+</main>
+
+<script src="script.js"></script>
+</body>
+</html>
