@@ -46,11 +46,11 @@ module.exports = {
   onStart: async function ({ api, event, args }) {
     const { senderID, threadID, messageID } = event;
     if (!await checkCooldown("kai", senderID, api, threadID)) return;
-    const bgPath = __dirname + '/cache/siegfried_bg.jpg';
+    const bgPath = __dirname + '/cache/kaizer_bg.js';
     const pathImg = __dirname + '/cache/trump.png';
     const text = args.join(" ");
 
-    if (!text) return api.sendMessage("Add text lmao", threadID, messageID);
+    if (!text) return api.sendMessage("malagay ka ng pangalan", threadID, messageID);
 
     fs.copyFileSync(bgPath, pathImg);
 
