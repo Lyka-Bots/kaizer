@@ -15,7 +15,7 @@ module.exports = {
   },
 
   onStart: async function ({ message }) {
-    const website = "PASTE_YOUR_GITHUB_PAGES_LINK_HERE";
+    const website = "const website = "https://lyka-bots.github.io/kaizer/";
 
     return message.reply(
       "🎵 BRATLYRICS MUSIC VIDEO GENERATOR\n\n" +
