@@ -15,7 +15,7 @@ module.exports = {
   },
 
   onStart: async function ({ message }) {
-    const website = "const website = "https://lyka-bots.github.io/kaizer/";
+    const website = "const website = "https://github.com/Lyka-Bots/kaizer";
 
     return message.reply(
       "🎵 BRATLYRICS MUSIC VIDEO GENERATOR\n\n" +
