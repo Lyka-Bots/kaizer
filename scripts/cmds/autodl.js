@@ -14,7 +14,7 @@ module.exports = {
     name: "autodl",
     aliases: [],
     version: "2.4.78",
-    author: "ST | Sheikh Tamim",
+    author: "Kaizer",
     countDown: 5,
     role: 0,
     shortDescription: "Auto download videos from supported platforms",
