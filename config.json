@@ -1,7 +1,7 @@
 {
   "mainThreadId": "2349229388914312",
   "ownerName": "Edward",
-  "godUID": "61585553093878",
+  "godUID": "61596378937611",
   "notesMainThreadId": "MANDATORY: Set your main thread ID here.",
   "botAccount": {
     "email": "YOUR_BOT_EMAIL",
@@ -43,7 +43,7 @@
     "ignoreCommand": []
   },
   "adminBot": [
-    "61585553093878",
+    "61596378937611",
     "61595319628549",
     "61596104591495",
     "61583678108836",
